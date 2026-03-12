@@ -14,13 +14,13 @@ export default function Header() {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-dark-900 border-t border-dark-700 z-50">
+    <nav className="fixed bottom-0 left-0 right-0 bg-dark-900 border-t border-dark-700 z-50 pb-[env(safe-area-inset-bottom)]">
       <div className="max-w-lg mx-auto flex">
         {navItems.map((item) => (
           <Link
             key={item.href}
             href={item.href}
-            className={`flex-1 py-3 text-center text-base font-medium transition-colors ${
+            className={`flex-1 py-4 text-center text-base font-medium transition-colors ${
               pathname === item.href
                 ? 'text-accent-400'
                 : 'text-gray-500 hover:text-gray-300'

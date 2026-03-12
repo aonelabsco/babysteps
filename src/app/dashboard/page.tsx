@@ -158,10 +158,10 @@ export default function DashboardPage() {
   const noBabies = !family.babies || family.babies.length === 0;
 
   return (
-    <div className="min-h-screen bg-dark-950 pb-20">
+    <div className="min-h-screen bg-dark-950 pb-24">
       <div className="max-w-lg mx-auto px-4 pt-6 space-y-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-base font-bold text-gray-100">baby steps.</h1>
+          <h1 className="text-lg font-bold text-gray-100">baby steps.</h1>
           <BabySelector
             babies={family.babies || []}
             selectedId={selectedBabyId}

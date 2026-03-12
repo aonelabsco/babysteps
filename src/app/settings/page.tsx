@@ -24,7 +24,7 @@ function BabyProfileEditor({ baby, familyId }: { baby: Baby; familyId: string })
     try {
       const updated: Baby = {
         ...baby,
-        birthday: birthday ? new Date(birthday).getTime() : undefined,
+        birthday: birthday ? new Date(birthday + 'T12:00:00').getTime() : undefined,
         sex: sex || undefined,
       };
       await updateBaby(familyId, updated, baby);
@@ -159,7 +159,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-dark-950 pb-20">
+    <div className="min-h-screen bg-dark-950 pb-24">
       <div className="max-w-lg mx-auto px-4 pt-6 space-y-6">
         <h1 className="text-xl font-bold text-gray-100">settings</h1>
 

@@ -82,7 +82,7 @@ export default function GrowthPage() {
       await addGrowthRecord({
         familyId: family.id,
         babyId: selectedBabyId,
-        date: new Date(formDate).getTime(),
+        date: new Date(formDate + 'T12:00:00').getTime(),
         weight: formWeight ? parseFloat(formWeight) : undefined,
         length: formLength ? parseFloat(formLength) : undefined,
         headCircumference: formHead ? parseFloat(formHead) : undefined,
@@ -109,7 +109,7 @@ export default function GrowthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-dark-950 pb-20">
+    <div className="min-h-screen bg-dark-950 pb-24">
       <div className="max-w-lg mx-auto px-4 pt-6 space-y-4">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold text-gray-100">growth</h1>
