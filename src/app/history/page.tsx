@@ -7,14 +7,18 @@ import BabySelector from '@/components/BabySelector';
 import EventLog from '@/components/EventLog';
 import Header from '@/components/Header';
 import { subscribeToEvents } from '@/lib/firebase';
-import type { BabyEvent } from '@/lib/types';
+import { computeAverages } from '@/lib/hooks';
+import type { BabyEvent, EventType } from '@/lib/types';
+
+type FilterType = 'all' | EventType;
 
 export default function HistoryPage() {
   const { user, loading, family, familyLoading } = useAuthContext();
   const router = useRouter();
   const [selectedBabyId, setSelectedBabyId] = useState<string | null>(null);
   const [events, setEvents] = useState<BabyEvent[]>([]);
-  const [filter, setFilter] = useState<'all' | 'feed' | 'poop' | 'pee'>('all');
+  const [filter, setFilter] = useState<FilterType>('all');
+  const [avgPeriod, setAvgPeriod] = useState<7 | 30>(7);
 
   useEffect(() => {
     if (!loading && !user) router.replace('/');
@@ -36,18 +40,27 @@ export default function HistoryPage() {
   if (loading || familyLoading || !family) {
     return (
       <div className="min-h-screen bg-dark-950 flex items-center justify-center">
-        <div className="text-gray-500">Loading...</div>
+        <div className="text-gray-500">loading...</div>
       </div>
     );
   }
 
   const filtered = filter === 'all' ? events : events.filter((e) => e.type === filter);
+  const averages = computeAverages(events, avgPeriod);
+
+  const filters: { key: FilterType; label: string }[] = [
+    { key: 'all', label: 'all' },
+    { key: 'feed', label: '🍼 feeds' },
+    { key: 'poop', label: '💩 poops' },
+    { key: 'pee', label: '💧 pee' },
+    { key: 'sleep', label: '😴 sleep' },
+  ];
 
   return (
     <div className="min-h-screen bg-dark-950 pb-20">
       <div className="max-w-lg mx-auto px-4 pt-6 space-y-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold text-gray-100">History</h1>
+          <h1 className="text-xl font-bold text-gray-100">history</h1>
           <BabySelector
             babies={family.babies || []}
             selectedId={selectedBabyId}
@@ -55,34 +68,75 @@ export default function HistoryPage() {
           />
         </div>
 
+        {/* Averages */}
+        {averages.daysCovered > 0 && (
+          <div className="bg-dark-900 rounded-2xl p-4 border border-dark-700 space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xs font-semibold text-gray-500">averages</h2>
+              <div className="flex gap-1">
+                <button
+                  onClick={() => setAvgPeriod(7)}
+                  className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                    avgPeriod === 7 ? 'bg-accent-500 text-white' : 'bg-dark-800 text-gray-500'
+                  }`}
+                >
+                  7d
+                </button>
+                <button
+                  onClick={() => setAvgPeriod(30)}
+                  className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                    avgPeriod === 30 ? 'bg-accent-500 text-white' : 'bg-dark-800 text-gray-500'
+                  }`}
+                >
+                  30d
+                </button>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <AvgBox label="feeds/day" value={String(averages.avgFeedsPerDay)} />
+              <AvgBox label={`${averages.milkUnit}/day`} value={String(averages.avgMilkPerDay)} />
+              <AvgBox label="poops/day" value={String(averages.avgPoopsPerDay)} />
+            </div>
+          </div>
+        )}
+
         {/* Filter tabs */}
-        <div className="flex gap-2">
-          {(['all', 'feed', 'poop', 'pee'] as const).map((f) => (
+        <div className="flex gap-1.5 overflow-x-auto">
+          {filters.map((f) => (
             <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                filter === f
+              key={f.key}
+              onClick={() => setFilter(f.key)}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors whitespace-nowrap ${
+                filter === f.key
                   ? 'bg-accent-500 text-white'
                   : 'bg-dark-800 text-gray-400 border border-dark-700'
               }`}
             >
-              {f === 'all' ? 'All' : f === 'feed' ? '🍼 Feeds' : f === 'poop' ? '💩 Poops' : '💧 Pee'}
+              {f.label}
             </button>
           ))}
         </div>
 
         {/* Event log */}
         <div className="bg-dark-900 rounded-2xl p-4 border border-dark-700">
-          <EventLog events={filtered} showDelete={true} />
+          <EventLog events={filtered} showDelete={true} collapsible={true} />
         </div>
 
         <p className="text-xs text-center text-gray-600">
-          Showing all logged activity. Share this screen with your doctor.
+          showing all logged activity. share this screen with your doctor.
         </p>
       </div>
 
       <Header />
+    </div>
+  );
+}
+
+function AvgBox({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="bg-dark-800 rounded-xl p-2.5 text-center">
+      <p className="text-sm text-gray-100 font-semibold">{value}</p>
+      <p className="text-[10px] text-gray-500 mt-0.5">{label}</p>
     </div>
   );
 }

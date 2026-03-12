@@ -22,7 +22,7 @@ export interface Family {
   members: FamilyMember[];
 }
 
-export type EventType = 'feed' | 'poop' | 'pee';
+export type EventType = 'feed' | 'poop' | 'pee' | 'sleep' | 'wake';
 export type PoopSize = 'big' | 'medium' | 'small';
 
 export interface BabyEvent {
@@ -49,6 +49,8 @@ export interface DaySummary {
   milkUnit: string;
   poopCount: number;
   peeCount: number;
+  lastSleepEvent: BabyEvent | null;
+  sleepCount: number;
 }
 
 export interface ParsedInput {
@@ -57,4 +59,5 @@ export interface ParsedInput {
   unit?: 'ml' | 'oz';
   size?: PoopSize;
   babyName?: string;
+  timestamp?: number;
 }

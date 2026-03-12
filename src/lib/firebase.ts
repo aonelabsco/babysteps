@@ -19,7 +19,6 @@ import {
   where,
   orderBy,
   onSnapshot,
-  Timestamp,
   arrayUnion,
   arrayRemove,
 } from 'firebase/firestore';
@@ -170,6 +169,10 @@ export async function addEvent(event: Omit<BabyEvent, 'id'>): Promise<string> {
 
 export async function deleteEvent(eventId: string) {
   await deleteDoc(doc(db, 'events', eventId));
+}
+
+export async function updateEventTimestamp(eventId: string, newTimestamp: number) {
+  await updateDoc(doc(db, 'events', eventId), { timestamp: newTimestamp });
 }
 
 export function subscribeToEvents(
