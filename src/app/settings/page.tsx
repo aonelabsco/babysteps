@@ -8,7 +8,7 @@ import { addBaby, removeBaby, updateBaby, signOut } from '@/lib/firebase';
 import type { Baby, BabySex } from '@/lib/types';
 
 function formatBirthday(ts: number): string {
-  return new Date(ts).toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' });
+  return new Date(ts).toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
 }
 
 function BabyProfileEditor({ baby, familyId }: { baby: Baby; familyId: string }) {
@@ -24,7 +24,7 @@ function BabyProfileEditor({ baby, familyId }: { baby: Baby; familyId: string })
     try {
       const updated: Baby = {
         ...baby,
-        birthday: birthday ? new Date(birthday + 'T12:00:00').getTime() : undefined,
+        birthday: birthday ? new Date(birthday + 'T12:00:00Z').getTime() : undefined,
         sex: sex || undefined,
       };
       await updateBaby(familyId, updated, baby);
@@ -77,19 +77,19 @@ function BabyProfileEditor({ baby, familyId }: { baby: Baby; familyId: string })
         <div className="flex gap-2">
           <button
             onClick={() => setSex('male')}
-            className={`flex-1 py-2.5 rounded-xl text-base font-medium transition-colors ${
+            className={`flex-1 py-2.5 rounded-xl text-base font-medium transition-colors flex items-center justify-center gap-1 ${
               sex === 'male' ? 'bg-accent-500 text-white' : 'bg-dark-900 text-gray-400 hover:bg-dark-700'
             }`}
           >
-            ♂ boy
+            <span className="text-lg leading-none">♂</span> boy
           </button>
           <button
             onClick={() => setSex('female')}
-            className={`flex-1 py-2.5 rounded-xl text-base font-medium transition-colors ${
+            className={`flex-1 py-2.5 rounded-xl text-base font-medium transition-colors flex items-center justify-center gap-1 ${
               sex === 'female' ? 'bg-accent-500 text-white' : 'bg-dark-900 text-gray-400 hover:bg-dark-700'
             }`}
           >
-            ♀ girl
+            <span className="text-lg leading-none">♀</span> girl
           </button>
         </div>
       </div>
@@ -211,7 +211,7 @@ export default function SettingsPage() {
               value={newBabyName}
               onChange={(e) => setNewBabyName(e.target.value)}
               placeholder="baby's name"
-              className="flex-1 px-4 py-2.5 rounded-xl border border-dark-600 bg-dark-800 text-gray-200 placeholder-gray-600 text-base focus:outline-none focus:ring-2 focus:ring-accent-500"
+              className="flex-1 min-w-0 px-4 py-2.5 rounded-xl border border-dark-600 bg-dark-800 text-gray-200 placeholder-gray-600 text-base focus:outline-none focus:ring-2 focus:ring-accent-500"
             />
             <button
               type="submit"

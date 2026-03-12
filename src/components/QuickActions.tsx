@@ -137,7 +137,7 @@ export default function QuickActions({ defaultUnit, lastSleepEvent, onLog, disab
                 value={customAmount}
                 onChange={(e) => { setCustomAmount(e.target.value); setSelectedAmount(null); }}
                 placeholder="other"
-                className="w-full py-2.5 px-2 rounded-lg text-base text-center bg-dark-800 text-gray-300 placeholder-gray-600 border border-dark-600 focus:outline-none focus:ring-1 focus:ring-accent-500"
+                className="w-full min-w-0 py-2.5 px-2 rounded-lg text-base text-center bg-dark-800 text-gray-300 placeholder-gray-600 border border-dark-600 focus:outline-none focus:ring-1 focus:ring-accent-500"
               />
             </div>
           </div>
