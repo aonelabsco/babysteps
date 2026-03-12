@@ -72,11 +72,11 @@ export default function HistoryPage() {
         {averages.daysCovered > 0 && (
           <div className="bg-dark-900 rounded-2xl p-4 border border-dark-700 space-y-3">
             <div className="flex items-center justify-between">
-              <h2 className="text-xs font-semibold text-gray-500">averages</h2>
+              <h2 className="text-sm font-semibold text-gray-500">averages</h2>
               <div className="flex gap-1">
                 <button
                   onClick={() => setAvgPeriod(7)}
-                  className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                  className={`px-2.5 py-1 rounded-full text-sm font-medium transition-colors ${
                     avgPeriod === 7 ? 'bg-accent-500 text-white' : 'bg-dark-800 text-gray-500'
                   }`}
                 >
@@ -84,7 +84,7 @@ export default function HistoryPage() {
                 </button>
                 <button
                   onClick={() => setAvgPeriod(30)}
-                  className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                  className={`px-2.5 py-1 rounded-full text-sm font-medium transition-colors ${
                     avgPeriod === 30 ? 'bg-accent-500 text-white' : 'bg-dark-800 text-gray-500'
                   }`}
                 >
@@ -122,7 +122,7 @@ export default function HistoryPage() {
           <EventLog events={filtered} showDelete={true} collapsible={true} />
         </div>
 
-        <p className="text-xs text-center text-gray-600">
+        <p className="text-sm text-center text-gray-600">
           showing all logged activity. share this screen with your doctor.
         </p>
       </div>
@@ -135,8 +135,8 @@ export default function HistoryPage() {
 function AvgBox({ label, value }: { label: string; value: string }) {
   return (
     <div className="bg-dark-800 rounded-xl p-2.5 text-center">
-      <p className="text-base text-gray-100 font-semibold">{value}</p>
-      <p className="text-xs text-gray-500 mt-0.5">{label}</p>
+      <p className="text-lg text-gray-100 font-semibold">{value}</p>
+      <p className="text-sm text-gray-500 mt-0.5">{label}</p>
     </div>
   );
 }

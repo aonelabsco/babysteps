@@ -127,12 +127,12 @@ export default function GrowthPage() {
               <div>
                 <p className="text-lg font-semibold text-gray-100">{selectedBaby.name}</p>
                 {selectedBaby.birthday && (
-                  <p className="text-sm text-gray-400">
+                  <p className="text-base text-gray-400">
                     {calculateAge(selectedBaby.birthday)} · born {formatDate(selectedBaby.birthday)}
                   </p>
                 )}
                 {selectedBaby.sex && (
-                  <p className="text-sm text-gray-500 mt-0.5">
+                  <p className="text-base text-gray-500 mt-0.5">
                     {selectedBaby.sex === 'male' ? '♂ boy' : '♀ girl'}
                   </p>
                 )}
@@ -140,7 +140,7 @@ export default function GrowthPage() {
               {!selectedBaby.birthday && (
                 <button
                   onClick={() => router.push('/settings')}
-                  className="text-sm text-accent-400 hover:text-accent-300"
+                  className="text-base text-accent-400 hover:text-accent-300"
                 >
                   add birthday
                 </button>
@@ -152,25 +152,25 @@ export default function GrowthPage() {
         {/* Latest measurements */}
         {records.length > 0 && (
           <div className="bg-dark-900 rounded-2xl p-4 border border-dark-700">
-            <h2 className="text-sm font-semibold text-gray-500 mb-3">latest measurements</h2>
+            <h2 className="text-base font-semibold text-gray-500 mb-3">latest measurements</h2>
             <div className="grid grid-cols-3 gap-2">
               <div className="bg-dark-800 rounded-xl p-3 text-center">
-                <p className="text-lg text-gray-100 font-semibold">
+                <p className="text-xl text-gray-100 font-semibold">
                   {records[0].weight ? `${records[0].weight} kg` : '--'}
                 </p>
-                <p className="text-xs text-gray-500 mt-0.5">weight</p>
+                <p className="text-base text-gray-500 mt-0.5">weight</p>
               </div>
               <div className="bg-dark-800 rounded-xl p-3 text-center">
-                <p className="text-lg text-gray-100 font-semibold">
+                <p className="text-xl text-gray-100 font-semibold">
                   {records[0].length ? `${records[0].length} cm` : '--'}
                 </p>
-                <p className="text-xs text-gray-500 mt-0.5">length</p>
+                <p className="text-base text-gray-500 mt-0.5">length</p>
               </div>
               <div className="bg-dark-800 rounded-xl p-3 text-center">
-                <p className="text-lg text-gray-100 font-semibold">
+                <p className="text-xl text-gray-100 font-semibold">
                   {records[0].headCircumference ? `${records[0].headCircumference} cm` : '--'}
                 </p>
-                <p className="text-xs text-gray-500 mt-0.5">head</p>
+                <p className="text-base text-gray-500 mt-0.5">head</p>
               </div>
             </div>
           </div>
@@ -180,54 +180,54 @@ export default function GrowthPage() {
         {!showForm ? (
           <button
             onClick={() => setShowForm(true)}
-            className="w-full py-3.5 rounded-xl text-base font-semibold bg-accent-500 text-white hover:bg-accent-600 transition-colors"
+            className="w-full py-4 rounded-xl text-lg font-semibold bg-accent-500 text-white hover:bg-accent-600 transition-colors"
           >
             + add measurement
           </button>
         ) : (
           <form onSubmit={handleAdd} className="bg-dark-900 rounded-2xl p-4 border border-dark-700 space-y-3">
-            <h2 className="text-sm font-semibold text-gray-500">new measurement</h2>
+            <h2 className="text-base font-semibold text-gray-500">new measurement</h2>
             <div>
-              <label className="text-sm text-gray-400 mb-1 block">date</label>
+              <label className="text-base text-gray-400 mb-1 block">date</label>
               <input
                 type="date"
                 value={formDate}
                 onChange={(e) => setFormDate(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl border border-dark-600 bg-dark-800 text-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-accent-500"
+                className="w-full px-4 py-2.5 rounded-xl border border-dark-600 bg-dark-800 text-gray-200 text-base focus:outline-none focus:ring-2 focus:ring-accent-500"
               />
             </div>
             <div className="grid grid-cols-3 gap-2">
               <div>
-                <label className="text-sm text-gray-400 mb-1 block">weight (kg)</label>
+                <label className="text-base text-gray-400 mb-1 block">weight (kg)</label>
                 <input
                   type="number"
                   step="0.01"
                   value={formWeight}
                   onChange={(e) => setFormWeight(e.target.value)}
                   placeholder="3.5"
-                  className="w-full px-3 py-2.5 rounded-xl border border-dark-600 bg-dark-800 text-gray-200 text-sm placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
+                  className="w-full px-3 py-2.5 rounded-xl border border-dark-600 bg-dark-800 text-gray-200 text-base placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
                 />
               </div>
               <div>
-                <label className="text-sm text-gray-400 mb-1 block">length (cm)</label>
+                <label className="text-base text-gray-400 mb-1 block">length (cm)</label>
                 <input
                   type="number"
                   step="0.1"
                   value={formLength}
                   onChange={(e) => setFormLength(e.target.value)}
                   placeholder="50"
-                  className="w-full px-3 py-2.5 rounded-xl border border-dark-600 bg-dark-800 text-gray-200 text-sm placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
+                  className="w-full px-3 py-2.5 rounded-xl border border-dark-600 bg-dark-800 text-gray-200 text-base placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
                 />
               </div>
               <div>
-                <label className="text-sm text-gray-400 mb-1 block">head (cm)</label>
+                <label className="text-base text-gray-400 mb-1 block">head (cm)</label>
                 <input
                   type="number"
                   step="0.1"
                   value={formHead}
                   onChange={(e) => setFormHead(e.target.value)}
                   placeholder="35"
-                  className="w-full px-3 py-2.5 rounded-xl border border-dark-600 bg-dark-800 text-gray-200 text-sm placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
+                  className="w-full px-3 py-2.5 rounded-xl border border-dark-600 bg-dark-800 text-gray-200 text-base placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
                 />
               </div>
             </div>
@@ -235,14 +235,14 @@ export default function GrowthPage() {
               <button
                 type="submit"
                 disabled={saving || (!formWeight && !formLength && !formHead)}
-                className="flex-1 py-2.5 rounded-xl bg-accent-500 text-white font-medium hover:bg-accent-600 disabled:opacity-50 text-sm"
+                className="flex-1 py-2.5 rounded-xl bg-accent-500 text-white font-medium hover:bg-accent-600 disabled:opacity-50 text-base"
               >
                 {saving ? 'saving...' : 'save'}
               </button>
               <button
                 type="button"
                 onClick={() => setShowForm(false)}
-                className="px-5 py-2.5 rounded-xl bg-dark-800 text-gray-400 hover:bg-dark-700 text-sm"
+                className="px-5 py-2.5 rounded-xl bg-dark-800 text-gray-400 hover:bg-dark-700 text-base"
               >
                 cancel
               </button>
@@ -253,13 +253,13 @@ export default function GrowthPage() {
         {/* History */}
         {records.length > 0 && (
           <div className="bg-dark-900 rounded-2xl p-4 border border-dark-700">
-            <h2 className="text-sm font-semibold text-gray-500 mb-3">history</h2>
+            <h2 className="text-base font-semibold text-gray-500 mb-3">history</h2>
             <div className="space-y-2">
               {records.map((r) => (
                 <div key={r.id} className="flex items-center justify-between py-2.5 px-3 rounded-xl bg-dark-800 group">
                   <div>
-                    <p className="text-sm text-gray-300 font-medium">{formatDate(r.date)}</p>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-base text-gray-300 font-medium">{formatDate(r.date)}</p>
+                    <p className="text-base text-gray-500">
                       {[
                         r.weight && `${r.weight} kg`,
                         r.length && `${r.length} cm`,
@@ -282,7 +282,7 @@ export default function GrowthPage() {
           </div>
         )}
 
-        <p className="text-xs text-center text-gray-600">
+        <p className="text-sm text-center text-gray-600">
           track weight, length & head circumference for doctor visits.
         </p>
       </div>

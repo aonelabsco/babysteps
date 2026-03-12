@@ -125,24 +125,24 @@ export default function VoiceInput({ babyNames, onParsed, disabled }: VoiceInput
           onChange={(e) => setManualInput(e.target.value)}
           placeholder='try: "fed 120ml at 12:15"'
           disabled={disabled}
-          className="flex-1 px-4 py-3 rounded-xl border border-dark-600 bg-dark-800 text-gray-200 placeholder-gray-600 text-base focus:outline-none focus:ring-2 focus:ring-accent-500 disabled:opacity-50"
+          className="flex-1 px-4 py-3 rounded-xl border border-dark-600 bg-dark-800 text-gray-200 placeholder-gray-600 text-lg focus:outline-none focus:ring-2 focus:ring-accent-500 disabled:opacity-50"
         />
         <button
           type="submit"
           disabled={disabled || !manualInput.trim()}
-          className="px-4 py-3 rounded-xl bg-dark-700 text-gray-200 font-medium hover:bg-dark-600 disabled:opacity-50 text-base"
+          className="px-4 py-3 rounded-xl bg-dark-700 text-gray-200 font-medium hover:bg-dark-600 disabled:opacity-50 text-lg"
         >
           log
         </button>
       </form>
 
       {transcript && (
-        <p className="text-center text-gray-400 text-sm italic">
+        <p className="text-center text-gray-400 text-base italic">
           &ldquo;{transcript}&rdquo;
         </p>
       )}
       {error && (
-        <p className="text-center text-red-400 text-sm">{error}</p>
+        <p className="text-center text-red-400 text-base">{error}</p>
       )}
     </div>
   );
@@ -150,7 +150,7 @@ export default function VoiceInput({ babyNames, onParsed, disabled }: VoiceInput
 
 function MicIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
       <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
       <line x1="12" y1="19" x2="12" y2="23" />

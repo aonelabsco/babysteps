@@ -12,7 +12,7 @@ export default function BabySelector({ babies, selectedId, onSelect }: BabySelec
   if (babies.length === 0) return null;
   if (babies.length === 1) {
     return (
-      <h2 className="text-lg font-semibold text-gray-200">{babies[0].name}</h2>
+      <h2 className="text-base font-semibold text-gray-200">{babies[0].name}</h2>
     );
   }
 
