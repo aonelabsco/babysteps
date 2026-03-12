@@ -48,7 +48,7 @@ export default function EventLog({ events, limit, showDelete = false }: EventLog
 
   if (displayed.length === 0) {
     return (
-      <p className="text-center text-gray-400 py-6 text-sm">No activity logged yet</p>
+      <p className="text-center text-gray-600 py-6 text-sm">No activity logged yet</p>
     );
   }
 
@@ -76,15 +76,15 @@ export default function EventLog({ events, limit, showDelete = false }: EventLog
         return (
           <div key={event.id}>
             {showDateHeader && (
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide pt-3 pb-1 px-1">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide pt-3 pb-1 px-1">
                 {dateStr}
               </p>
             )}
-            <div className="flex items-center gap-3 py-2.5 px-3 rounded-xl hover:bg-pink-50 transition-colors group">
+            <div className="flex items-center gap-3 py-2.5 px-3 rounded-xl hover:bg-dark-800 transition-colors group">
               <span className="text-lg">{eventIcon(event.type)}</span>
               <div className="flex-1 min-w-0">
-                <p className="text-sm text-gray-800 font-medium">{eventDescription(event)}</p>
-                <p className="text-xs text-gray-400">
+                <p className="text-sm text-gray-200 font-medium">{eventDescription(event)}</p>
+                <p className="text-xs text-gray-500">
                   {formatTime(event.timestamp)}
                   {event.createdByName && ` · ${event.createdByName}`}
                   {event.babyName && !limit && ` · ${event.babyName}`}
@@ -94,7 +94,7 @@ export default function EventLog({ events, limit, showDelete = false }: EventLog
                 <button
                   onClick={() => handleDelete(event.id)}
                   disabled={deleting === event.id}
-                  className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-pink-500 text-xs transition-opacity disabled:opacity-50"
+                  className="opacity-0 group-hover:opacity-100 text-gray-600 hover:text-red-400 text-xs transition-opacity disabled:opacity-50"
                 >
                   ✕
                 </button>

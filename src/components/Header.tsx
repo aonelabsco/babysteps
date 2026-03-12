@@ -13,7 +13,7 @@ export default function Header() {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-pink-100 z-50">
+    <nav className="fixed bottom-0 left-0 right-0 bg-dark-900 border-t border-dark-700 z-50">
       <div className="max-w-lg mx-auto flex">
         {navItems.map((item) => (
           <Link
@@ -21,8 +21,8 @@ export default function Header() {
             href={item.href}
             className={`flex-1 py-3 text-center text-sm font-medium transition-colors ${
               pathname === item.href
-                ? 'text-pink-600'
-                : 'text-gray-400 hover:text-gray-600'
+                ? 'text-accent-400'
+                : 'text-gray-500 hover:text-gray-300'
             }`}
           >
             {item.label}

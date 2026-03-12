@@ -35,8 +35,8 @@ export default function HistoryPage() {
 
   if (loading || familyLoading || !family) {
     return (
-      <div className="min-h-screen bg-pink-50 flex items-center justify-center">
-        <div className="text-gray-400">Loading...</div>
+      <div className="min-h-screen bg-dark-950 flex items-center justify-center">
+        <div className="text-gray-500">Loading...</div>
       </div>
     );
   }
@@ -44,10 +44,10 @@ export default function HistoryPage() {
   const filtered = filter === 'all' ? events : events.filter((e) => e.type === filter);
 
   return (
-    <div className="min-h-screen bg-pink-50 pb-20">
+    <div className="min-h-screen bg-dark-950 pb-20">
       <div className="max-w-lg mx-auto px-4 pt-6 space-y-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold text-gray-900">History</h1>
+          <h1 className="text-xl font-bold text-gray-100">History</h1>
           <BabySelector
             babies={family.babies || []}
             selectedId={selectedBabyId}
@@ -63,8 +63,8 @@ export default function HistoryPage() {
               onClick={() => setFilter(f)}
               className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
                 filter === f
-                  ? 'bg-pink-500 text-white'
-                  : 'bg-white text-gray-500 border border-pink-100'
+                  ? 'bg-accent-500 text-white'
+                  : 'bg-dark-800 text-gray-400 border border-dark-700'
               }`}
             >
               {f === 'all' ? 'All' : f === 'feed' ? '🍼 Feeds' : f === 'poop' ? '💩 Poops' : '💧 Pee'}
@@ -73,11 +73,11 @@ export default function HistoryPage() {
         </div>
 
         {/* Event log */}
-        <div className="bg-white rounded-2xl p-4 border border-pink-100">
+        <div className="bg-dark-900 rounded-2xl p-4 border border-dark-700">
           <EventLog events={filtered} showDelete={true} />
         </div>
 
-        <p className="text-xs text-center text-gray-400">
+        <p className="text-xs text-center text-gray-600">
           Showing all logged activity. Share this screen with your doctor.
         </p>
       </div>

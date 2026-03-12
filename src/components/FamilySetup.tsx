@@ -56,23 +56,23 @@ export default function FamilySetup() {
 
   if (mode === 'choose') {
     return (
-      <div className="min-h-screen bg-pink-50 flex items-center justify-center p-6">
+      <div className="min-h-screen bg-dark-950 flex items-center justify-center p-6">
         <div className="w-full max-w-sm space-y-4">
-          <h1 className="text-2xl font-bold text-gray-900 text-center">Welcome!</h1>
-          <p className="text-gray-500 text-center text-sm">
-            Create a new family or join an existing one with a code.
+          <h1 className="text-2xl font-bold text-gray-100 text-center lowercase">welcome!</h1>
+          <p className="text-gray-500 text-center text-sm lowercase">
+            create a new family or join an existing one with a code.
           </p>
           <button
             onClick={() => setMode('create')}
-            className="w-full py-3 rounded-xl bg-pink-500 text-white font-medium hover:bg-pink-600 transition-colors"
+            className="w-full py-3 rounded-xl bg-accent-500 text-white font-medium hover:bg-accent-600 transition-colors lowercase"
           >
-            Create New Family
+            create new family
           </button>
           <button
             onClick={() => setMode('join')}
-            className="w-full py-3 rounded-xl bg-white text-gray-800 font-medium border border-pink-200 hover:bg-pink-50 transition-colors"
+            className="w-full py-3 rounded-xl bg-dark-800 text-gray-200 font-medium border border-dark-700 hover:bg-dark-700 transition-colors lowercase"
           >
-            Join with Code
+            join with code
           </button>
         </div>
       </div>
@@ -81,30 +81,30 @@ export default function FamilySetup() {
 
   if (mode === 'create') {
     return (
-      <div className="min-h-screen bg-pink-50 flex items-center justify-center p-6">
+      <div className="min-h-screen bg-dark-950 flex items-center justify-center p-6">
         <form onSubmit={handleCreate} className="w-full max-w-sm space-y-4">
           <button
             type="button"
             onClick={() => setMode('choose')}
-            className="text-gray-400 text-sm"
+            className="text-gray-500 text-sm lowercase"
           >
-            &larr; Back
+            &larr; back
           </button>
-          <h1 className="text-2xl font-bold text-gray-900">Create Family</h1>
+          <h1 className="text-2xl font-bold text-gray-100 lowercase">create family</h1>
           <input
             type="text"
             value={familyName}
             onChange={(e) => setFamilyName(e.target.value)}
-            placeholder="Family name (e.g., The Smiths)"
-            className="w-full px-4 py-3 rounded-xl border border-pink-200 bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-300"
+            placeholder="family name (e.g., the smiths)"
+            className="w-full px-4 py-3 rounded-xl border border-dark-600 bg-dark-800 text-gray-200 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-accent-500 lowercase"
           />
-          {error && <p className="text-pink-600 text-sm">{error}</p>}
+          {error && <p className="text-red-400 text-sm lowercase">{error}</p>}
           <button
             type="submit"
             disabled={loading || !familyName.trim()}
-            className="w-full py-3 rounded-xl bg-pink-500 text-white font-medium hover:bg-pink-600 disabled:opacity-50"
+            className="w-full py-3 rounded-xl bg-accent-500 text-white font-medium hover:bg-accent-600 disabled:opacity-50 lowercase"
           >
-            {loading ? 'Creating...' : 'Create'}
+            {loading ? 'creating...' : 'create'}
           </button>
         </form>
       </div>
@@ -112,31 +112,31 @@ export default function FamilySetup() {
   }
 
   return (
-    <div className="min-h-screen bg-pink-50 flex items-center justify-center p-6">
+    <div className="min-h-screen bg-dark-950 flex items-center justify-center p-6">
       <form onSubmit={handleJoin} className="w-full max-w-sm space-y-4">
         <button
           type="button"
           onClick={() => setMode('choose')}
-          className="text-gray-400 text-sm"
+          className="text-gray-500 text-sm lowercase"
         >
-          &larr; Back
+          &larr; back
         </button>
-        <h1 className="text-2xl font-bold text-gray-900">Join Family</h1>
+        <h1 className="text-2xl font-bold text-gray-100 lowercase">join family</h1>
         <input
           type="text"
           value={code}
           onChange={(e) => setCode(e.target.value)}
-          placeholder="Enter 6-digit family code"
+          placeholder="enter 6-digit family code"
           maxLength={6}
-          className="w-full px-4 py-3 rounded-xl border border-pink-200 bg-white text-gray-800 text-center text-2xl tracking-widest placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-300"
+          className="w-full px-4 py-3 rounded-xl border border-dark-600 bg-dark-800 text-gray-200 text-center text-2xl tracking-widest placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
         />
-        {error && <p className="text-pink-600 text-sm">{error}</p>}
+        {error && <p className="text-red-400 text-sm lowercase">{error}</p>}
         <button
           type="submit"
           disabled={loading || code.length !== 6}
-          className="w-full py-3 rounded-xl bg-pink-500 text-white font-medium hover:bg-pink-600 disabled:opacity-50"
+          className="w-full py-3 rounded-xl bg-accent-500 text-white font-medium hover:bg-accent-600 disabled:opacity-50 lowercase"
         >
-          {loading ? 'Joining...' : 'Join'}
+          {loading ? 'joining...' : 'join'}
         </button>
       </form>
     </div>

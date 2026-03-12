@@ -104,8 +104,8 @@ export default function DashboardPage() {
 
   if (loading || familyLoading || !family) {
     return (
-      <div className="min-h-screen bg-pink-50 flex items-center justify-center">
-        <div className="text-gray-400">Loading...</div>
+      <div className="min-h-screen bg-dark-950 flex items-center justify-center">
+        <div className="text-gray-500">Loading...</div>
       </div>
     );
   }
@@ -113,11 +113,11 @@ export default function DashboardPage() {
   const noBabies = !family.babies || family.babies.length === 0;
 
   return (
-    <div className="min-h-screen bg-pink-50 pb-20">
+    <div className="min-h-screen bg-dark-950 pb-20">
       <div className="max-w-lg mx-auto px-4 pt-6 space-y-5">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold text-gray-900">baby steps</h1>
+          <h1 className="text-xl font-bold text-gray-100">baby steps.</h1>
           <BabySelector
             babies={family.babies || []}
             selectedId={selectedBabyId}
@@ -126,11 +126,11 @@ export default function DashboardPage() {
         </div>
 
         {noBabies ? (
-          <div className="bg-white rounded-2xl p-6 border border-pink-100 text-center">
-            <p className="text-gray-500 mb-3">Add your baby to get started</p>
+          <div className="bg-dark-900 rounded-2xl p-6 border border-dark-700 text-center">
+            <p className="text-gray-400 mb-3">Add your baby to get started</p>
             <button
               onClick={() => router.push('/settings')}
-              className="px-6 py-2 rounded-xl bg-pink-500 text-white font-medium hover:bg-pink-600"
+              className="px-6 py-2 rounded-xl bg-accent-500 text-white font-medium hover:bg-accent-600"
             >
               Go to Settings
             </button>
@@ -158,7 +158,7 @@ export default function DashboardPage() {
 
       {/* Toast */}
       {toast && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-5 py-2.5 rounded-full text-sm font-medium shadow-lg z-50 animate-bounce">
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 bg-dark-700 text-gray-100 px-5 py-2.5 rounded-full text-sm font-medium shadow-lg z-50 animate-bounce border border-dark-600">
           {toast}
         </div>
       )}
