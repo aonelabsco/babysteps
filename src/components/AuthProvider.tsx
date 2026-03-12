@@ -7,6 +7,7 @@ import {
   getUserFamily,
   getFamily,
   subscribeToFamily,
+  handleRedirectResult,
 } from '@/lib/firebase';
 import type { Family } from '@/lib/types';
 
@@ -35,6 +36,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [family, setFamily] = useState<Family | null>(null);
   const [familyLoading, setFamilyLoading] = useState(true);
 
+  // Handle redirect result from signInWithRedirect (mobile browsers)
+  useEffect(() => {
+    handleRedirectResult();
+  }, []);
+
   const loadFamily = async () => {
     if (!user) {
       setFamily(null);
@@ -42,11 +48,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
     setFamilyLoading(true);
-    const familyId = await getUserFamily(user.uid);
-    if (familyId) {
-      const fam = await getFamily(familyId);
-      setFamily(fam);
-    } else {
+    try {
+      const familyId = await getUserFamily(user.uid);
+      if (familyId) {
+        const fam = await getFamily(familyId);
+        setFamily(fam);
+      } else {
+        setFamily(null);
+      }
+    } catch (err) {
+      console.error('Failed to load family:', err);
       setFamily(null);
     }
     setFamilyLoading(false);

@@ -16,8 +16,39 @@ export function parseInput(text: string, babyNames: string[] = []): ParsedInput 
     }
   }
 
+  // Try to extract time offset
+  let timestamp: number | undefined;
+  const timeOffsetMatch = lower.match(/(\d+)\s*(?:min(?:ute)?s?|m)\s*ago/i);
+  const hourOffsetMatch = lower.match(/(\d+)\s*(?:hour|hr|h)s?\s*ago/i);
+  if (timeOffsetMatch) {
+    timestamp = Date.now() - parseInt(timeOffsetMatch[1]) * 60 * 1000;
+  } else if (hourOffsetMatch) {
+    timestamp = Date.now() - parseInt(hourOffsetMatch[1]) * 60 * 60 * 1000;
+  }
+
+  // --- SLEEP patterns ---
+  const sleepPatterns = [
+    /(?:slept|sleeping|fell\s*asleep|went\s*to\s*sleep|nap(?:ping)?|asleep|put\s*(?:down|to\s*(?:bed|sleep)))/i,
+  ];
+
+  for (const pattern of sleepPatterns) {
+    if (pattern.test(lower)) {
+      return { type: 'sleep', babyName, timestamp };
+    }
+  }
+
+  // --- WAKE patterns ---
+  const wakePatterns = [
+    /(?:woke|awake|waking|got\s*up|wake\s*up|woken)/i,
+  ];
+
+  for (const pattern of wakePatterns) {
+    if (pattern.test(lower)) {
+      return { type: 'wake', babyName, timestamp };
+    }
+  }
+
   // --- FEED patterns ---
-  // "fed 120 ml", "gave 4 oz", "bottle 120ml", "breastfed 5oz", "120 ml feed", "drank 4 oz"
   const feedPatterns = [
     /(?:fed|feed|gave|bottle|breastfed|drank|had|ate|drink|nursing|nursed)\s+(\d+(?:\.\d+)?)\s*(ml|oz|ounce|ounces|milliliters?)?/i,
     /(\d+(?:\.\d+)?)\s*(ml|oz|ounce|ounces|milliliters?)\s*(?:feed|fed|bottle|milk|formula|breast\s*milk)?/i,
@@ -33,12 +64,11 @@ export function parseInput(text: string, babyNames: string[] = []): ParsedInput 
       if (rawUnit) {
         unit = rawUnit.startsWith('oz') || rawUnit.startsWith('ounce') ? 'oz' : 'ml';
       }
-      return { type: 'feed', quantity, unit, babyName };
+      return { type: 'feed', quantity, unit, babyName, timestamp };
     }
   }
 
   // --- POOP patterns ---
-  // "pooped big", "big poop", "poop small", "pooped", "had a poop", "number 2"
   const poopPatterns = [
     /(?:poop(?:ed|s|y)?|poo(?:ed)?|number\s*2|bowel|stool|💩)/i,
   ];
@@ -53,19 +83,18 @@ export function parseInput(text: string, babyNames: string[] = []): ParsedInput 
       } else if (/\b(?:medium|normal|regular|average)\b/i.test(lower)) {
         size = 'medium';
       }
-      return { type: 'poop', size, babyName };
+      return { type: 'poop', size, babyName, timestamp };
     }
   }
 
   // --- PEE patterns ---
-  // "pee", "peed", "wet diaper", "diaper change for pee", "changed diaper", "wet"
   const peePatterns = [
     /(?:pee(?:d|s)?|wet\s*(?:diaper|nappy)?|diaper\s*change|changed?\s*(?:diaper|nappy)|nappy\s*change|urin|wee|tinkle|💦)/i,
   ];
 
   for (const pattern of peePatterns) {
     if (pattern.test(lower)) {
-      return { type: 'pee', babyName };
+      return { type: 'pee', babyName, timestamp };
     }
   }
 
