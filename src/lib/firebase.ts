@@ -6,6 +6,8 @@ import {
   signInWithRedirect,
   getRedirectResult,
   signOut as fbSignOut,
+  indexedDBLocalPersistence,
+  setPersistence,
 } from 'firebase/auth';
 import {
   getFirestore,
@@ -53,37 +55,41 @@ export const db = typeof window !== 'undefined' ? getFirebaseDb() : (null as any
 
 const googleProvider = new GoogleAuthProvider();
 
-// Detect if we're in a context where popups won't work
-function shouldUseRedirect(): boolean {
+// Ensure auth state persists across sessions (IndexedDB survives PWA restarts)
+if (typeof window !== 'undefined' && auth) {
+  setPersistence(auth, indexedDBLocalPersistence).catch(() => {});
+}
+
+// Detect in-app browsers where popups are blocked entirely
+function isInAppBrowser(): boolean {
   if (typeof window === 'undefined') return false;
-  const ua = navigator.userAgent.toLowerCase();
-  // In-app browsers (WhatsApp, Instagram, Facebook, etc.) and iOS PWA
-  const isInAppBrowser = /fban|fbav|instagram|whatsapp|line|wechat|twitter/i.test(ua);
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-  return isInAppBrowser || isStandalone;
+  return /fban|fbav|instagram|whatsapp|line|wechat|twitter/i.test(navigator.userAgent);
 }
 
 export async function signInWithGoogle() {
-  if (shouldUseRedirect()) {
+  // In-app browsers (WhatsApp, Instagram etc): only redirect works
+  if (isInAppBrowser()) {
     return signInWithRedirect(auth, googleProvider);
   }
+
+  // PWA standalone + regular browsers: popup works best
+  // (redirect in PWA opens system browser and never returns)
   try {
     return await signInWithPopup(auth, googleProvider);
   } catch (err: any) {
-    // If popup fails (blocked, storage issue), fall back to redirect
-    if (
-      err.code === 'auth/popup-blocked' ||
-      err.code === 'auth/popup-closed-by-user' ||
-      err.code === 'auth/internal-error' ||
-      err.message?.includes('missing initial state')
-    ) {
+    // If popup blocked (not just closed), fall back to redirect
+    if (err.code === 'auth/popup-blocked') {
       return signInWithRedirect(auth, googleProvider);
+    }
+    // Don't alert on user closing the popup
+    if (err.code === 'auth/popup-closed-by-user') {
+      return;
     }
     throw err;
   }
 }
 
-// Call this on app init to handle redirect results
+// Call on app init to handle redirect results (for in-app browser flow)
 export async function handleRedirectResult() {
   try {
     await getRedirectResult(auth);

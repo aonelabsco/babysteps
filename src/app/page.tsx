@@ -44,12 +44,8 @@ export default function LoginPage() {
           onClick={async () => {
             try {
               await signInWithGoogle();
-              // signInWithRedirect returns void — auth state change handles the rest
             } catch (err: any) {
-              if (err.code !== 'auth/popup-closed-by-user') {
-                console.error('Sign in error:', err);
-                alert('Sign in failed. Please try again.');
-              }
+              console.error('Sign in error:', err);
             }
           }}
           className="w-full py-3 rounded-xl bg-dark-800 text-gray-200 font-medium border border-dark-700 hover:bg-dark-700 transition-colors flex items-center justify-center gap-3 shadow-sm"
