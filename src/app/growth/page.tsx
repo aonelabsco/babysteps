@@ -82,16 +82,17 @@ export default function GrowthPage() {
 
     setSaving(true);
     try {
-      await addGrowthRecord({
+      const record: Omit<GrowthRecord, 'id'> = {
         familyId: family.id,
         babyId: selectedBabyId,
         date: new Date(formDate + 'T12:00:00Z').getTime(),
-        weight: formWeight ? parseFloat(formWeight) : undefined,
-        length: formLength ? parseFloat(formLength) : undefined,
-        headCircumference: formHead ? parseFloat(formHead) : undefined,
         createdBy: user.uid,
         createdAt: Date.now(),
-      });
+      };
+      if (formWeight) record.weight = parseFloat(formWeight);
+      if (formLength) record.length = parseFloat(formLength);
+      if (formHead) record.headCircumference = parseFloat(formHead);
+      await addGrowthRecord(record);
       setShowForm(false);
       setFormWeight('');
       setFormLength('');
