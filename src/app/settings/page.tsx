@@ -51,7 +51,7 @@ function BabyProfileEditor({ baby, familyId }: { baby: Baby; familyId: string })
           <p className="text-base text-gray-400">born {formatBirthday(baby.birthday)}</p>
         )}
         {baby.sex && (
-          <p className="text-base text-gray-500">{baby.sex === 'male' ? '♂ boy' : '♀ girl'}</p>
+          <p className="text-base text-gray-500">{baby.sex === 'male' ? 'boy' : 'girl'}</p>
         )}
         {!baby.birthday && !baby.sex && (
           <p className="text-base text-gray-600">tap edit to add birthday & sex</p>
@@ -69,7 +69,7 @@ function BabyProfileEditor({ baby, familyId }: { baby: Baby; familyId: string })
           type="date"
           value={birthday}
           onChange={(e) => setBirthday(e.target.value)}
-          className="w-full px-4 py-2.5 rounded-xl border border-dark-600 bg-dark-900 text-gray-200 text-base focus:outline-none focus:ring-2 focus:ring-accent-500"
+          className="max-w-[200px] px-4 py-2.5 rounded-xl border border-dark-600 bg-dark-900 text-gray-200 text-base focus:outline-none focus:ring-2 focus:ring-accent-500"
         />
       </div>
       <div>
@@ -77,19 +77,19 @@ function BabyProfileEditor({ baby, familyId }: { baby: Baby; familyId: string })
         <div className="flex gap-2">
           <button
             onClick={() => setSex('male')}
-            className={`flex-1 py-2.5 rounded-xl text-base font-medium transition-colors flex items-center justify-center gap-1 ${
+            className={`flex-1 py-2.5 rounded-xl text-base font-medium transition-colors ${
               sex === 'male' ? 'bg-accent-500 text-white' : 'bg-dark-900 text-gray-400 hover:bg-dark-700'
             }`}
           >
-            <span className="text-lg leading-none">♂</span> boy
+            boy
           </button>
           <button
             onClick={() => setSex('female')}
-            className={`flex-1 py-2.5 rounded-xl text-base font-medium transition-colors flex items-center justify-center gap-1 ${
+            className={`flex-1 py-2.5 rounded-xl text-base font-medium transition-colors ${
               sex === 'female' ? 'bg-accent-500 text-white' : 'bg-dark-900 text-gray-400 hover:bg-dark-700'
             }`}
           >
-            <span className="text-lg leading-none">♀</span> girl
+            girl
           </button>
         </div>
       </div>
