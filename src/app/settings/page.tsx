@@ -39,22 +39,22 @@ function BabyProfileEditor({ baby, familyId }: { baby: Baby; familyId: string })
     return (
       <div className="py-3 px-4 rounded-xl bg-dark-800 space-y-1.5">
         <div className="flex items-center justify-between">
-          <span className="text-base text-gray-200 font-medium">{baby.name}</span>
+          <span className="text-lg text-gray-200 font-medium">{baby.name}</span>
           <button
             onClick={() => setEditing(true)}
-            className="text-sm text-accent-400 hover:text-accent-300"
+            className="text-base text-accent-400 hover:text-accent-300"
           >
             edit
           </button>
         </div>
         {baby.birthday && (
-          <p className="text-sm text-gray-400">born {formatBirthday(baby.birthday)}</p>
+          <p className="text-base text-gray-400">born {formatBirthday(baby.birthday)}</p>
         )}
         {baby.sex && (
-          <p className="text-sm text-gray-500">{baby.sex === 'male' ? '♂ boy' : '♀ girl'}</p>
+          <p className="text-base text-gray-500">{baby.sex === 'male' ? '♂ boy' : '♀ girl'}</p>
         )}
         {!baby.birthday && !baby.sex && (
-          <p className="text-sm text-gray-600">tap edit to add birthday & sex</p>
+          <p className="text-base text-gray-600">tap edit to add birthday & sex</p>
         )}
       </div>
     );
@@ -62,22 +62,22 @@ function BabyProfileEditor({ baby, familyId }: { baby: Baby; familyId: string })
 
   return (
     <div className="py-3 px-4 rounded-xl bg-dark-800 space-y-3">
-      <p className="text-base text-gray-200 font-medium">{baby.name}</p>
+      <p className="text-lg text-gray-200 font-medium">{baby.name}</p>
       <div>
-        <label className="text-sm text-gray-400 mb-1 block">birthday</label>
+        <label className="text-base text-gray-400 mb-1 block">birthday</label>
         <input
           type="date"
           value={birthday}
           onChange={(e) => setBirthday(e.target.value)}
-          className="w-full px-4 py-2.5 rounded-xl border border-dark-600 bg-dark-900 text-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-accent-500"
+          className="w-full px-4 py-2.5 rounded-xl border border-dark-600 bg-dark-900 text-gray-200 text-base focus:outline-none focus:ring-2 focus:ring-accent-500"
         />
       </div>
       <div>
-        <label className="text-sm text-gray-400 mb-1 block">sex</label>
+        <label className="text-base text-gray-400 mb-1 block">sex</label>
         <div className="flex gap-2">
           <button
             onClick={() => setSex('male')}
-            className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+            className={`flex-1 py-2.5 rounded-xl text-base font-medium transition-colors ${
               sex === 'male' ? 'bg-accent-500 text-white' : 'bg-dark-900 text-gray-400 hover:bg-dark-700'
             }`}
           >
@@ -85,7 +85,7 @@ function BabyProfileEditor({ baby, familyId }: { baby: Baby; familyId: string })
           </button>
           <button
             onClick={() => setSex('female')}
-            className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+            className={`flex-1 py-2.5 rounded-xl text-base font-medium transition-colors ${
               sex === 'female' ? 'bg-accent-500 text-white' : 'bg-dark-900 text-gray-400 hover:bg-dark-700'
             }`}
           >
@@ -97,13 +97,13 @@ function BabyProfileEditor({ baby, familyId }: { baby: Baby; familyId: string })
         <button
           onClick={handleSave}
           disabled={saving}
-          className="flex-1 py-2.5 rounded-xl bg-accent-500 text-white font-medium hover:bg-accent-600 disabled:opacity-50 text-sm"
+          className="flex-1 py-2.5 rounded-xl bg-accent-500 text-white font-medium hover:bg-accent-600 disabled:opacity-50 text-base"
         >
           {saving ? 'saving...' : 'save'}
         </button>
         <button
           onClick={() => setEditing(false)}
-          className="px-5 py-2.5 rounded-xl bg-dark-900 text-gray-400 hover:bg-dark-700 text-sm"
+          className="px-5 py-2.5 rounded-xl bg-dark-900 text-gray-400 hover:bg-dark-700 text-base"
         >
           cancel
         </button>
@@ -165,18 +165,18 @@ export default function SettingsPage() {
 
         {/* Family info */}
         <div className="bg-dark-900 rounded-2xl p-5 border border-dark-700 space-y-3">
-          <h2 className="text-sm font-semibold text-gray-500">family</h2>
+          <h2 className="text-base font-semibold text-gray-500">family</h2>
           <div className="flex items-center justify-between">
-            <span className="text-base text-gray-200 font-medium">{family.name}</span>
+            <span className="text-lg text-gray-200 font-medium">{family.name}</span>
             <div className="text-right">
-              <p className="text-sm text-gray-500">share this code with partner</p>
+              <p className="text-base text-gray-500">share this code with partner</p>
               <p className="text-2xl font-bold text-accent-400 tracking-widest">{family.code}</p>
             </div>
           </div>
           <div className="border-t border-dark-700 pt-3">
-            <p className="text-sm text-gray-500 mb-1">members</p>
+            <p className="text-base text-gray-500 mb-1">members</p>
             {family.members.map((m) => (
-              <p key={m.uid} className="text-base text-gray-300">
+              <p key={m.uid} className="text-lg text-gray-300">
                 {m.name} {m.uid === user?.uid && '(you)'}
               </p>
             ))}
@@ -185,7 +185,7 @@ export default function SettingsPage() {
 
         {/* Babies */}
         <div className="bg-dark-900 rounded-2xl p-5 border border-dark-700 space-y-3">
-          <h2 className="text-sm font-semibold text-gray-500">babies</h2>
+          <h2 className="text-base font-semibold text-gray-500">babies</h2>
 
           {family.babies?.length > 0 ? (
             <div className="space-y-2">
@@ -194,7 +194,7 @@ export default function SettingsPage() {
                   <BabyProfileEditor baby={baby} familyId={family.id} />
                   <button
                     onClick={() => handleRemoveBaby(baby)}
-                    className="text-sm text-gray-600 hover:text-red-400 px-4 py-1"
+                    className="text-base text-gray-600 hover:text-red-400 px-4 py-1"
                   >
                     remove
                   </button>
@@ -211,12 +211,12 @@ export default function SettingsPage() {
               value={newBabyName}
               onChange={(e) => setNewBabyName(e.target.value)}
               placeholder="baby's name"
-              className="flex-1 px-4 py-2.5 rounded-xl border border-dark-600 bg-dark-800 text-gray-200 placeholder-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-accent-500"
+              className="flex-1 px-4 py-2.5 rounded-xl border border-dark-600 bg-dark-800 text-gray-200 placeholder-gray-600 text-base focus:outline-none focus:ring-2 focus:ring-accent-500"
             />
             <button
               type="submit"
               disabled={adding || !newBabyName.trim()}
-              className="px-5 py-2.5 rounded-xl bg-accent-500 text-white font-medium hover:bg-accent-600 disabled:opacity-50 text-sm"
+              className="px-5 py-2.5 rounded-xl bg-accent-500 text-white font-medium hover:bg-accent-600 disabled:opacity-50 text-base"
             >
               add
             </button>
@@ -226,19 +226,19 @@ export default function SettingsPage() {
         {/* Default unit */}
         {family.defaultUnit && (
           <div className="bg-dark-900 rounded-2xl p-5 border border-dark-700">
-            <h2 className="text-sm font-semibold text-gray-500 mb-1">default unit</h2>
-            <p className="text-base text-gray-200">{family.defaultUnit === 'ml' ? 'milliliters (ml)' : 'ounces (oz)'}</p>
-            <p className="text-sm text-gray-600 mt-1">set by first feed entry. log a feed with a different unit to change.</p>
+            <h2 className="text-base font-semibold text-gray-500 mb-1">default unit</h2>
+            <p className="text-lg text-gray-200">{family.defaultUnit === 'ml' ? 'milliliters (ml)' : 'ounces (oz)'}</p>
+            <p className="text-base text-gray-600 mt-1">set by first feed entry. log a feed with a different unit to change.</p>
           </div>
         )}
 
         {/* Account */}
         <div className="bg-dark-900 rounded-2xl p-5 border border-dark-700 space-y-3">
-          <h2 className="text-sm font-semibold text-gray-500">account</h2>
-          <p className="text-base text-gray-300">{user?.email}</p>
+          <h2 className="text-base font-semibold text-gray-500">account</h2>
+          <p className="text-lg text-gray-300">{user?.email}</p>
           <button
             onClick={handleSignOut}
-            className="w-full py-2.5 rounded-xl border border-dark-600 text-gray-400 font-medium hover:bg-dark-800 transition-colors text-sm"
+            className="w-full py-2.5 rounded-xl border border-dark-600 text-gray-400 font-medium hover:bg-dark-800 transition-colors text-base"
           >
             sign out
           </button>

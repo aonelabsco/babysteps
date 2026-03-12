@@ -39,7 +39,7 @@ function TimePicker({ onSelect }: { onSelect: (timestamp: number) => void }) {
     <div className="flex gap-2 items-center">
       <button
         onClick={() => { setMode('now'); onSelect(Date.now()); }}
-        className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+        className={`flex-1 py-2.5 rounded-lg text-base font-medium transition-colors ${
           mode === 'now'
             ? 'bg-accent-500 text-white'
             : 'bg-dark-800 text-gray-400 hover:bg-dark-700'
@@ -53,12 +53,12 @@ function TimePicker({ onSelect }: { onSelect: (timestamp: number) => void }) {
           value={customTime}
           onChange={(e) => { setCustomTime(e.target.value); setMode('custom'); }}
           onFocus={() => setMode('custom')}
-          className="flex-1 py-2 px-3 rounded-lg text-sm text-center bg-dark-800 text-gray-300 border border-dark-600 focus:outline-none focus:ring-1 focus:ring-accent-500"
+          className="flex-1 py-2 px-3 rounded-lg text-base text-center bg-dark-800 text-gray-300 border border-dark-600 focus:outline-none focus:ring-1 focus:ring-accent-500"
         />
         {mode === 'custom' && (
           <button
             onClick={() => onSelect(timeStringToTimestamp(customTime))}
-            className="px-4 py-2 rounded-lg text-sm font-medium bg-accent-500 text-white hover:bg-accent-600 transition-colors"
+            className="px-4 py-2 rounded-lg text-base font-medium bg-accent-500 text-white hover:bg-accent-600 transition-colors"
           >
             log
           </button>
@@ -104,7 +104,7 @@ export default function QuickActions({ defaultUnit, lastSleepEvent, onLog, disab
       <button
         onClick={() => toggle('feed')}
         disabled={disabled}
-        className={`w-full py-3.5 rounded-xl text-base font-semibold transition-all disabled:opacity-50 ${
+        className={`w-full py-4 rounded-xl text-lg font-semibold transition-all disabled:opacity-50 ${
           expanded === 'feed'
             ? 'bg-accent-500 text-white'
             : 'bg-dark-800 text-gray-300 border border-dark-600 hover:bg-dark-700'
@@ -122,7 +122,7 @@ export default function QuickActions({ defaultUnit, lastSleepEvent, onLog, disab
               <button
                 key={amt}
                 onClick={() => { setSelectedAmount(amt); setCustomAmount(''); }}
-                className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                className={`flex-1 py-2.5 rounded-lg text-base font-medium transition-colors ${
                   selectedAmount === amt
                     ? 'bg-accent-500 text-white'
                     : 'bg-dark-800 text-gray-400 hover:bg-dark-700'
@@ -137,7 +137,7 @@ export default function QuickActions({ defaultUnit, lastSleepEvent, onLog, disab
                 value={customAmount}
                 onChange={(e) => { setCustomAmount(e.target.value); setSelectedAmount(null); }}
                 placeholder="other"
-                className="w-full py-2.5 px-2 rounded-lg text-sm text-center bg-dark-800 text-gray-300 placeholder-gray-600 border border-dark-600 focus:outline-none focus:ring-1 focus:ring-accent-500"
+                className="w-full py-2.5 px-2 rounded-lg text-base text-center bg-dark-800 text-gray-300 placeholder-gray-600 border border-dark-600 focus:outline-none focus:ring-1 focus:ring-accent-500"
               />
             </div>
           </div>
@@ -149,7 +149,7 @@ export default function QuickActions({ defaultUnit, lastSleepEvent, onLog, disab
               if (amount) logWithTimestamp('feed', ts, { quantity: amount, unit });
             }} />
           ) : (
-            <p className="text-sm text-gray-600 text-center">pick an amount, then choose when</p>
+            <p className="text-base text-gray-600 text-center">pick an amount, then choose when</p>
           )}
         </div>
       )}
@@ -159,7 +159,7 @@ export default function QuickActions({ defaultUnit, lastSleepEvent, onLog, disab
         <button
           onClick={() => toggle('pee')}
           disabled={disabled}
-          className={`flex-1 py-3.5 rounded-xl text-base font-semibold transition-all disabled:opacity-50 ${
+          className={`flex-1 py-4 rounded-xl text-lg font-semibold transition-all disabled:opacity-50 ${
             expanded === 'pee'
               ? 'bg-accent-500 text-white'
               : 'bg-dark-800 text-gray-300 border border-dark-600 hover:bg-dark-700'
@@ -170,7 +170,7 @@ export default function QuickActions({ defaultUnit, lastSleepEvent, onLog, disab
         <button
           onClick={() => toggle('poop')}
           disabled={disabled}
-          className={`flex-1 py-3.5 rounded-xl text-base font-semibold transition-all disabled:opacity-50 ${
+          className={`flex-1 py-4 rounded-xl text-lg font-semibold transition-all disabled:opacity-50 ${
             expanded === 'poop'
               ? 'bg-accent-500 text-white'
               : 'bg-dark-800 text-gray-300 border border-dark-600 hover:bg-dark-700'
@@ -181,7 +181,7 @@ export default function QuickActions({ defaultUnit, lastSleepEvent, onLog, disab
         <button
           onClick={() => toggle('sleep')}
           disabled={disabled}
-          className={`flex-1 py-3.5 rounded-xl text-base font-semibold transition-all disabled:opacity-50 ${
+          className={`flex-1 py-4 rounded-xl text-lg font-semibold transition-all disabled:opacity-50 ${
             expanded === 'sleep'
               ? 'bg-accent-500 text-white'
               : 'bg-dark-800 text-gray-300 border border-dark-600 hover:bg-dark-700'
@@ -206,7 +206,7 @@ export default function QuickActions({ defaultUnit, lastSleepEvent, onLog, disab
               <button
                 key={s}
                 onClick={() => setSelectedSize(s)}
-                className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                className={`flex-1 py-2.5 rounded-lg text-base font-medium transition-colors ${
                   selectedSize === s
                     ? 'bg-accent-500 text-white'
                     : 'bg-dark-800 text-gray-400 hover:bg-dark-700'

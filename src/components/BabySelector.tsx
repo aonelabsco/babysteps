@@ -22,7 +22,7 @@ export default function BabySelector({ babies, selectedId, onSelect }: BabySelec
         <button
           key={baby.id}
           onClick={() => onSelect(baby.id)}
-          className={`px-4 py-2 rounded-full text-base font-medium transition-all ${
+          className={`px-4 py-2 rounded-full text-lg font-medium transition-all ${
             selectedId === baby.id
               ? 'bg-accent-500 text-white'
               : 'bg-dark-800 text-gray-400 hover:bg-dark-700'
