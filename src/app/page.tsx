@@ -44,8 +44,10 @@ export default function LoginPage() {
           onClick={async () => {
             try {
               await signInWithGoogle();
+              // signInWithRedirect returns void — auth state change handles the rest
             } catch (err: any) {
               if (err.code !== 'auth/popup-closed-by-user') {
+                console.error('Sign in error:', err);
                 alert('Sign in failed. Please try again.');
               }
             }

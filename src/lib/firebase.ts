@@ -3,6 +3,8 @@ import {
   getAuth,
   GoogleAuthProvider,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signOut as fbSignOut,
 } from 'firebase/auth';
 import {
@@ -51,8 +53,43 @@ export const db = typeof window !== 'undefined' ? getFirebaseDb() : (null as any
 
 const googleProvider = new GoogleAuthProvider();
 
+// Detect if we're in a context where popups won't work
+function shouldUseRedirect(): boolean {
+  if (typeof window === 'undefined') return false;
+  const ua = navigator.userAgent.toLowerCase();
+  // In-app browsers (WhatsApp, Instagram, Facebook, etc.) and iOS PWA
+  const isInAppBrowser = /fban|fbav|instagram|whatsapp|line|wechat|twitter/i.test(ua);
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+  return isInAppBrowser || isStandalone;
+}
+
 export async function signInWithGoogle() {
-  return signInWithPopup(auth, googleProvider);
+  if (shouldUseRedirect()) {
+    return signInWithRedirect(auth, googleProvider);
+  }
+  try {
+    return await signInWithPopup(auth, googleProvider);
+  } catch (err: any) {
+    // If popup fails (blocked, storage issue), fall back to redirect
+    if (
+      err.code === 'auth/popup-blocked' ||
+      err.code === 'auth/popup-closed-by-user' ||
+      err.code === 'auth/internal-error' ||
+      err.message?.includes('missing initial state')
+    ) {
+      return signInWithRedirect(auth, googleProvider);
+    }
+    throw err;
+  }
+}
+
+// Call this on app init to handle redirect results
+export async function handleRedirectResult() {
+  try {
+    await getRedirectResult(auth);
+  } catch {
+    // Ignore redirect errors
+  }
 }
 
 export async function signOut() {
@@ -85,7 +122,6 @@ export async function createFamily(
     members: [member],
   };
   const ref = await addDoc(collection(db, 'families'), familyData);
-  // Also store user -> family mapping
   await setDoc(doc(db, 'userFamilies', user.uid), { familyId: ref.id });
   return { id: ref.id, ...familyData };
 }
@@ -101,7 +137,6 @@ export async function joinFamily(
   const familyDoc = snap.docs[0];
   const familyData = familyDoc.data() as Omit<Family, 'id'>;
 
-  // Check if already a member
   if (!familyData.members.find((m) => m.uid === user.uid)) {
     const member: FamilyMember = {
       uid: user.uid,
@@ -178,7 +213,8 @@ export async function updateEventTimestamp(eventId: string, newTimestamp: number
 export function subscribeToEvents(
   familyId: string,
   babyId: string,
-  callback: (events: BabyEvent[]) => void
+  callback: (events: BabyEvent[]) => void,
+  onError?: (err: Error) => void
 ) {
   const q = query(
     collection(db, 'events'),
@@ -186,16 +222,24 @@ export function subscribeToEvents(
     where('babyId', '==', babyId),
     orderBy('timestamp', 'desc')
   );
-  return onSnapshot(q, (snap) => {
-    const events = snap.docs.map((d) => ({ id: d.id, ...d.data() } as BabyEvent));
-    callback(events);
-  });
+  return onSnapshot(
+    q,
+    (snap) => {
+      const events = snap.docs.map((d) => ({ id: d.id, ...d.data() } as BabyEvent));
+      callback(events);
+    },
+    (err) => {
+      console.error('Firestore subscribeToEvents error:', err);
+      if (onError) onError(err);
+    }
+  );
 }
 
 export function subscribeToDayEvents(
   familyId: string,
   babyId: string,
-  callback: (events: BabyEvent[]) => void
+  callback: (events: BabyEvent[]) => void,
+  onError?: (err: Error) => void
 ) {
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
@@ -207,8 +251,15 @@ export function subscribeToDayEvents(
     where('timestamp', '>=', startOfDay.getTime()),
     orderBy('timestamp', 'desc')
   );
-  return onSnapshot(q, (snap) => {
-    const events = snap.docs.map((d) => ({ id: d.id, ...d.data() } as BabyEvent));
-    callback(events);
-  });
+  return onSnapshot(
+    q,
+    (snap) => {
+      const events = snap.docs.map((d) => ({ id: d.id, ...d.data() } as BabyEvent));
+      callback(events);
+    },
+    (err) => {
+      console.error('Firestore subscribeToDayEvents error:', err);
+      if (onError) onError(err);
+    }
+  );
 }

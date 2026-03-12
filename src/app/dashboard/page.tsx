@@ -37,7 +37,18 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!family?.id || !selectedBabyId) return;
-    const unsub = subscribeToDayEvents(family.id, selectedBabyId, setEvents);
+    const unsub = subscribeToDayEvents(
+      family.id,
+      selectedBabyId,
+      setEvents,
+      (err) => {
+        // Firestore index errors contain a URL to create the index
+        const msg = err.message || '';
+        if (msg.includes('index')) {
+          console.error('Missing Firestore index. Create it here:', msg);
+        }
+      }
+    );
     return unsub;
   }, [family?.id, selectedBabyId]);
 
