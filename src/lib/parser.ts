@@ -1,6 +1,50 @@
 import type { ParsedInput, PoopSize } from './types';
 
 /**
+ * Extract time from text, returning the timestamp and text with time removed.
+ */
+function extractTime(text: string): { timestamp: number; remaining: string } | null {
+  // "at 3:30pm", "at 14:00", "3:30pm", "12:15"
+  let m = text.match(/\b(?:at\s+)?(\d{1,2}):(\d{2})\s*(am|pm)?\b/i);
+  if (m) {
+    let h = parseInt(m[1]);
+    const min = parseInt(m[2]);
+    const ap = m[3]?.toLowerCase();
+    if (ap === 'pm' && h < 12) h += 12;
+    if (ap === 'am' && h === 12) h = 0;
+    const d = new Date();
+    d.setHours(h, min, 0, 0);
+    if (d.getTime() > Date.now() + 60000) d.setDate(d.getDate() - 1);
+    return { timestamp: d.getTime(), remaining: text.replace(m[0], ' ').trim() };
+  }
+
+  // "at 1pm", "at 8am"
+  m = text.match(/\bat\s+(\d{1,2})\s*(am|pm)\b/i);
+  if (m) {
+    let h = parseInt(m[1]);
+    const ap = m[2].toLowerCase();
+    if (ap === 'pm' && h < 12) h += 12;
+    if (ap === 'am' && h === 12) h = 0;
+    const d = new Date();
+    d.setHours(h, 0, 0, 0);
+    if (d.getTime() > Date.now() + 60000) d.setDate(d.getDate() - 1);
+    return { timestamp: d.getTime(), remaining: text.replace(m[0], ' ').trim() };
+  }
+
+  // "30 min ago", "2 hours ago"
+  m = text.match(/(\d+)\s*(?:min(?:ute)?s?|m)\s*ago/i);
+  if (m) {
+    return { timestamp: Date.now() - parseInt(m[1]) * 60000, remaining: text.replace(m[0], ' ').trim() };
+  }
+  m = text.match(/(\d+)\s*(?:hour|hr|h)s?\s*ago/i);
+  if (m) {
+    return { timestamp: Date.now() - parseInt(m[1]) * 3600000, remaining: text.replace(m[0], ' ').trim() };
+  }
+
+  return null;
+}
+
+/**
  * Local parser for baby activity input.
  * Handles common patterns without needing an LLM.
  */
@@ -16,67 +60,23 @@ export function parseInput(text: string, babyNames: string[] = []): ParsedInput 
     }
   }
 
-  // Try to extract time — specific time first, then relative offset
-  let timestamp: number | undefined;
-
-  // Match specific times: "at 12:15", "at 3:30pm", "at 14:00", "at 3pm"
-  const specificTimeMatch = lower.match(/(?:at\s+)?(\d{1,2}):(\d{2})\s*(am|pm)?/i)
-    || lower.match(/at\s+(\d{1,2})\s*(am|pm)/i);
-  if (specificTimeMatch) {
-    let hours = parseInt(specificTimeMatch[1]);
-    const minutes = specificTimeMatch[2] && !(/am|pm/i.test(specificTimeMatch[2]))
-      ? parseInt(specificTimeMatch[2])
-      : (specificTimeMatch[3] ? 0 : (specificTimeMatch[2] ? parseInt(specificTimeMatch[2]) : 0));
-    const ampm = specificTimeMatch[3] || (specificTimeMatch[2] && /am|pm/i.test(specificTimeMatch[2]) ? specificTimeMatch[2] : null);
-
-    if (ampm) {
-      if (ampm.toLowerCase() === 'pm' && hours < 12) hours += 12;
-      if (ampm.toLowerCase() === 'am' && hours === 12) hours = 0;
-    }
-
-    const d = new Date();
-    d.setHours(hours, minutes, 0, 0);
-    // If the time is in the future, assume yesterday
-    if (d.getTime() > Date.now() + 60000) {
-      d.setDate(d.getDate() - 1);
-    }
-    timestamp = d.getTime();
-  }
-
-  // Fall back to relative offsets: "30 min ago", "2 hours ago"
-  if (!timestamp) {
-    const timeOffsetMatch = lower.match(/(\d+)\s*(?:min(?:ute)?s?|m)\s*ago/i);
-    const hourOffsetMatch = lower.match(/(\d+)\s*(?:hour|hr|h)s?\s*ago/i);
-    if (timeOffsetMatch) {
-      timestamp = Date.now() - parseInt(timeOffsetMatch[1]) * 60 * 1000;
-    } else if (hourOffsetMatch) {
-      timestamp = Date.now() - parseInt(hourOffsetMatch[1]) * 60 * 60 * 1000;
-    }
-  }
+  // Extract time first, then use remaining text for event parsing
+  // This prevents "at 1pm" from having "1" parsed as a feed quantity
+  const timeResult = extractTime(lower);
+  const timestamp = timeResult?.timestamp;
+  const remaining = timeResult?.remaining || lower;
 
   // --- SLEEP patterns ---
-  const sleepPatterns = [
-    /(?:slept|sleeping|fell\s*asleep|went\s*to\s*sleep|nap(?:ping)?|asleep|put\s*(?:down|to\s*(?:bed|sleep)))/i,
-  ];
-
-  for (const pattern of sleepPatterns) {
-    if (pattern.test(lower)) {
-      return { type: 'sleep', babyName, timestamp };
-    }
+  if (/(?:slept|sleeping|fell\s*asleep|went\s*to\s*sleep|nap(?:ping)?|asleep|put\s*(?:down|to\s*(?:bed|sleep)))/i.test(remaining)) {
+    return { type: 'sleep', babyName, timestamp };
   }
 
   // --- WAKE patterns ---
-  const wakePatterns = [
-    /(?:woke|awake|waking|got\s*up|wake\s*up|woken)/i,
-  ];
-
-  for (const pattern of wakePatterns) {
-    if (pattern.test(lower)) {
-      return { type: 'wake', babyName, timestamp };
-    }
+  if (/(?:woke|awake|waking|got\s*up|wake\s*up|woken)/i.test(remaining)) {
+    return { type: 'wake', babyName, timestamp };
   }
 
-  // --- FEED patterns ---
+  // --- FEED patterns (use remaining text so time numbers are stripped) ---
   const feedPatterns = [
     /(?:fed|feed|gave|bottle|breastfed|drank|had|ate|drink|nursing|nursed)\s+(\d+(?:\.\d+)?)\s*(ml|oz|ounce|ounces|milliliters?)?/i,
     /(\d+(?:\.\d+)?)\s*(ml|oz|ounce|ounces|milliliters?)\s*(?:feed|fed|bottle|milk|formula|breast\s*milk)?/i,
@@ -84,7 +84,7 @@ export function parseInput(text: string, babyNames: string[] = []): ParsedInput 
   ];
 
   for (const pattern of feedPatterns) {
-    const match = lower.match(pattern);
+    const match = remaining.match(pattern);
     if (match) {
       const quantity = parseFloat(match[1]);
       let unit: 'ml' | 'oz' | undefined;
@@ -96,34 +96,25 @@ export function parseInput(text: string, babyNames: string[] = []): ParsedInput 
     }
   }
 
-  // --- POOP patterns ---
-  const poopPatterns = [
-    /(?:poop(?:ed|s|y)?|poo(?:ed)?|number\s*2|bowel|stool|💩)/i,
-  ];
+  // "fed" / "feed" without quantity
+  if (/\b(?:fed|feed|bottle|breastfed|nursing|nursed)\b/i.test(remaining)) {
+    return { type: 'feed', babyName, timestamp };
+  }
 
-  for (const pattern of poopPatterns) {
-    if (pattern.test(lower)) {
-      let size: PoopSize = 'medium';
-      if (/\b(?:big|large|huge|lot|massive)\b/i.test(lower)) {
-        size = 'big';
-      } else if (/\b(?:small|little|tiny|bit|slight)\b/i.test(lower)) {
-        size = 'small';
-      } else if (/\b(?:medium|normal|regular|average)\b/i.test(lower)) {
-        size = 'medium';
-      }
-      return { type: 'poop', size, babyName, timestamp };
+  // --- POOP patterns ---
+  if (/(?:poop(?:ed|s|y)?|poo(?:ed)?|number\s*2|bowel|stool|💩)/i.test(remaining)) {
+    let size: PoopSize = 'medium';
+    if (/\b(?:big|large|huge|lot|massive)\b/i.test(remaining)) {
+      size = 'big';
+    } else if (/\b(?:small|little|tiny|bit|slight)\b/i.test(remaining)) {
+      size = 'small';
     }
+    return { type: 'poop', size, babyName, timestamp };
   }
 
   // --- PEE patterns ---
-  const peePatterns = [
-    /(?:pee(?:d|s)?|wet\s*(?:diaper|nappy)?|diaper\s*change|changed?\s*(?:diaper|nappy)|nappy\s*change|urin|wee|tinkle|💦)/i,
-  ];
-
-  for (const pattern of peePatterns) {
-    if (pattern.test(lower)) {
-      return { type: 'pee', babyName, timestamp };
-    }
+  if (/(?:pee(?:d|s)?|wet\s*(?:diaper|nappy)?|diaper\s*change|changed?\s*(?:diaper|nappy)|nappy\s*change|urin|wee|tinkle|💦)/i.test(remaining)) {
+    return { type: 'pee', babyName, timestamp };
   }
 
   return null;
