@@ -97,8 +97,8 @@ export default function GrowthPage() {
       setFormWeight('');
       setFormLength('');
       setFormHead('');
-    } catch {
-      alert('Failed to save');
+    } catch (err: any) {
+      alert('Failed to save: ' + (err?.message || err));
     }
     setSaving(false);
   };
