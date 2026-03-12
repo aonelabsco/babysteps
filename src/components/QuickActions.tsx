@@ -10,18 +10,63 @@ interface QuickActionsProps {
   disabled?: boolean;
 }
 
-const TIME_OPTIONS = [
-  { label: 'now', offset: 0 },
-  { label: '15m ago', offset: 15 * 60 * 1000 },
-  { label: '30m ago', offset: 30 * 60 * 1000 },
-  { label: '1h ago', offset: 60 * 60 * 1000 },
-  { label: '2h ago', offset: 2 * 60 * 60 * 1000 },
-];
-
 const ML_PRESETS = [60, 90, 120, 150];
 const OZ_PRESETS = [2, 3, 4, 5];
 
 type ExpandedAction = 'feed' | 'poop' | 'pee' | 'sleep' | null;
+
+function getCurrentTimeString(): string {
+  const now = new Date();
+  return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+}
+
+function timeStringToTimestamp(timeStr: string): number {
+  const [hours, minutes] = timeStr.split(':').map(Number);
+  const d = new Date();
+  d.setHours(hours, minutes, 0, 0);
+  // If the chosen time is in the future (e.g. user picks 11pm but it's 2am), assume yesterday
+  if (d.getTime() > Date.now() + 60000) {
+    d.setDate(d.getDate() - 1);
+  }
+  return d.getTime();
+}
+
+function TimePicker({ onSelect }: { onSelect: (timestamp: number) => void }) {
+  const [mode, setMode] = useState<'now' | 'custom'>('now');
+  const [customTime, setCustomTime] = useState(getCurrentTimeString);
+
+  return (
+    <div className="flex gap-2 items-center">
+      <button
+        onClick={() => { setMode('now'); onSelect(Date.now()); }}
+        className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+          mode === 'now'
+            ? 'bg-accent-500 text-white'
+            : 'bg-dark-800 text-gray-400 hover:bg-dark-700'
+        }`}
+      >
+        now
+      </button>
+      <div className="flex-1 flex gap-1.5">
+        <input
+          type="time"
+          value={customTime}
+          onChange={(e) => { setCustomTime(e.target.value); setMode('custom'); }}
+          onFocus={() => setMode('custom')}
+          className="flex-1 py-2 px-3 rounded-lg text-sm text-center bg-dark-800 text-gray-300 border border-dark-600 focus:outline-none focus:ring-1 focus:ring-accent-500"
+        />
+        {mode === 'custom' && (
+          <button
+            onClick={() => onSelect(timeStringToTimestamp(customTime))}
+            className="px-4 py-2 rounded-lg text-sm font-medium bg-accent-500 text-white hover:bg-accent-600 transition-colors"
+          >
+            log
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function QuickActions({ defaultUnit, lastSleepEvent, onLog, disabled }: QuickActionsProps) {
   const [expanded, setExpanded] = useState<ExpandedAction>(null);
@@ -46,8 +91,8 @@ export default function QuickActions({ defaultUnit, lastSleepEvent, onLog, disab
     }
   };
 
-  const logWithTime = (type: EventType, offsetMs: number, extra?: { quantity?: number; unit?: 'ml' | 'oz'; size?: PoopSize }) => {
-    onLog(type, Date.now() - offsetMs, extra);
+  const logWithTimestamp = (type: EventType, timestamp: number, extra?: { quantity?: number; unit?: 'ml' | 'oz'; size?: PoopSize }) => {
+    onLog(type, timestamp, extra);
     setExpanded(null);
     setSelectedAmount(null);
     setCustomAmount('');
@@ -59,7 +104,7 @@ export default function QuickActions({ defaultUnit, lastSleepEvent, onLog, disab
       <button
         onClick={() => toggle('feed')}
         disabled={disabled}
-        className={`w-full py-3 rounded-xl text-sm font-semibold transition-all disabled:opacity-50 ${
+        className={`w-full py-3.5 rounded-xl text-base font-semibold transition-all disabled:opacity-50 ${
           expanded === 'feed'
             ? 'bg-accent-500 text-white'
             : 'bg-dark-800 text-gray-300 border border-dark-600 hover:bg-dark-700'
@@ -77,7 +122,7 @@ export default function QuickActions({ defaultUnit, lastSleepEvent, onLog, disab
               <button
                 key={amt}
                 onClick={() => { setSelectedAmount(amt); setCustomAmount(''); }}
-                className={`flex-1 py-2 rounded-lg text-xs font-medium transition-colors ${
+                className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                   selectedAmount === amt
                     ? 'bg-accent-500 text-white'
                     : 'bg-dark-800 text-gray-400 hover:bg-dark-700'
@@ -92,29 +137,19 @@ export default function QuickActions({ defaultUnit, lastSleepEvent, onLog, disab
                 value={customAmount}
                 onChange={(e) => { setCustomAmount(e.target.value); setSelectedAmount(null); }}
                 placeholder="other"
-                className="w-full py-2 px-2 rounded-lg text-xs text-center bg-dark-800 text-gray-300 placeholder-gray-600 border border-dark-600 focus:outline-none focus:ring-1 focus:ring-accent-500"
+                className="w-full py-2.5 px-2 rounded-lg text-sm text-center bg-dark-800 text-gray-300 placeholder-gray-600 border border-dark-600 focus:outline-none focus:ring-1 focus:ring-accent-500"
               />
             </div>
           </div>
 
-          {/* Time picker — tapping logs the feed */}
-          <div className="flex gap-1.5">
-            {TIME_OPTIONS.map((t) => {
-              const amount = selectedAmount || (customAmount ? parseFloat(customAmount) : null);
-              return (
-                <button
-                  key={t.label}
-                  disabled={!amount}
-                  onClick={() => amount && logWithTime('feed', t.offset, { quantity: amount, unit })}
-                  className="flex-1 py-2 rounded-lg text-xs font-medium bg-dark-800 text-gray-400 hover:bg-accent-600 hover:text-white disabled:opacity-30 disabled:hover:bg-dark-800 disabled:hover:text-gray-400 transition-colors"
-                >
-                  {t.label}
-                </button>
-              );
-            })}
-          </div>
-          {!(selectedAmount || customAmount) && (
-            <p className="text-xs text-gray-600 text-center">pick an amount, then tap when</p>
+          {/* Time picker */}
+          {(selectedAmount || customAmount) ? (
+            <TimePicker onSelect={(ts) => {
+              const amount = selectedAmount || parseFloat(customAmount);
+              if (amount) logWithTimestamp('feed', ts, { quantity: amount, unit });
+            }} />
+          ) : (
+            <p className="text-sm text-gray-600 text-center">pick an amount, then choose when</p>
           )}
         </div>
       )}
@@ -124,7 +159,7 @@ export default function QuickActions({ defaultUnit, lastSleepEvent, onLog, disab
         <button
           onClick={() => toggle('pee')}
           disabled={disabled}
-          className={`flex-1 py-3 rounded-xl text-sm font-semibold transition-all disabled:opacity-50 ${
+          className={`flex-1 py-3.5 rounded-xl text-base font-semibold transition-all disabled:opacity-50 ${
             expanded === 'pee'
               ? 'bg-accent-500 text-white'
               : 'bg-dark-800 text-gray-300 border border-dark-600 hover:bg-dark-700'
@@ -135,7 +170,7 @@ export default function QuickActions({ defaultUnit, lastSleepEvent, onLog, disab
         <button
           onClick={() => toggle('poop')}
           disabled={disabled}
-          className={`flex-1 py-3 rounded-xl text-sm font-semibold transition-all disabled:opacity-50 ${
+          className={`flex-1 py-3.5 rounded-xl text-base font-semibold transition-all disabled:opacity-50 ${
             expanded === 'poop'
               ? 'bg-accent-500 text-white'
               : 'bg-dark-800 text-gray-300 border border-dark-600 hover:bg-dark-700'
@@ -146,7 +181,7 @@ export default function QuickActions({ defaultUnit, lastSleepEvent, onLog, disab
         <button
           onClick={() => toggle('sleep')}
           disabled={disabled}
-          className={`flex-1 py-3 rounded-xl text-sm font-semibold transition-all disabled:opacity-50 ${
+          className={`flex-1 py-3.5 rounded-xl text-base font-semibold transition-all disabled:opacity-50 ${
             expanded === 'sleep'
               ? 'bg-accent-500 text-white'
               : 'bg-dark-800 text-gray-300 border border-dark-600 hover:bg-dark-700'
@@ -156,20 +191,10 @@ export default function QuickActions({ defaultUnit, lastSleepEvent, onLog, disab
         </button>
       </div>
 
-      {/* Pee expanded — just time picker */}
+      {/* Pee expanded — time picker */}
       {expanded === 'pee' && (
         <div className="bg-dark-900 rounded-xl p-3 border border-dark-700">
-          <div className="flex gap-1.5">
-            {TIME_OPTIONS.map((t) => (
-              <button
-                key={t.label}
-                onClick={() => logWithTime('pee', t.offset)}
-                className="flex-1 py-2 rounded-lg text-xs font-medium bg-dark-800 text-gray-400 hover:bg-accent-600 hover:text-white transition-colors"
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
+          <TimePicker onSelect={(ts) => logWithTimestamp('pee', ts)} />
         </div>
       )}
 
@@ -181,7 +206,7 @@ export default function QuickActions({ defaultUnit, lastSleepEvent, onLog, disab
               <button
                 key={s}
                 onClick={() => setSelectedSize(s)}
-                className={`flex-1 py-2 rounded-lg text-xs font-medium transition-colors ${
+                className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                   selectedSize === s
                     ? 'bg-accent-500 text-white'
                     : 'bg-dark-800 text-gray-400 hover:bg-dark-700'
@@ -191,34 +216,14 @@ export default function QuickActions({ defaultUnit, lastSleepEvent, onLog, disab
               </button>
             ))}
           </div>
-          <div className="flex gap-1.5">
-            {TIME_OPTIONS.map((t) => (
-              <button
-                key={t.label}
-                onClick={() => logWithTime('poop', t.offset, { size: selectedSize })}
-                className="flex-1 py-2 rounded-lg text-xs font-medium bg-dark-800 text-gray-400 hover:bg-accent-600 hover:text-white transition-colors"
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
+          <TimePicker onSelect={(ts) => logWithTimestamp('poop', ts, { size: selectedSize })} />
         </div>
       )}
 
-      {/* Sleep/Wake expanded — just time picker */}
+      {/* Sleep/Wake expanded — time picker */}
       {expanded === 'sleep' && (
         <div className="bg-dark-900 rounded-xl p-3 border border-dark-700">
-          <div className="flex gap-1.5">
-            {TIME_OPTIONS.map((t) => (
-              <button
-                key={t.label}
-                onClick={() => logWithTime(sleepType, t.offset)}
-                className="flex-1 py-2 rounded-lg text-xs font-medium bg-dark-800 text-gray-400 hover:bg-accent-600 hover:text-white transition-colors"
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
+          <TimePicker onSelect={(ts) => logWithTimestamp(sleepType, ts)} />
         </div>
       )}
     </div>

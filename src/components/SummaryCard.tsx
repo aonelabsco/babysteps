@@ -31,7 +31,7 @@ export default function SummaryCard({ summary, feedAlert }: SummaryCardProps) {
   return (
     <div className="bg-dark-900 rounded-2xl p-4 shadow-sm border border-dark-700 space-y-3">
       {feedAlert && (
-        <div className="bg-red-900/30 text-red-400 rounded-xl px-4 py-2 text-xs font-medium border border-red-900/50">
+        <div className="bg-red-900/30 text-red-400 rounded-xl px-4 py-2.5 text-sm font-medium border border-red-900/50">
           it&apos;s been over 3 hours since the last feed
         </div>
       )}
@@ -60,8 +60,8 @@ export default function SummaryCard({ summary, feedAlert }: SummaryCardProps) {
 function StatBox({ label, value, span2 }: { label: string; value: string; span2?: boolean }) {
   return (
     <div className={`bg-dark-800 rounded-xl p-3 ${span2 ? 'col-span-2' : ''}`}>
-      <p className="text-xs text-gray-500 font-medium">{label}</p>
-      <p className="text-sm text-gray-100 font-semibold mt-0.5">{value}</p>
+      <p className="text-sm text-gray-500 font-medium">{label}</p>
+      <p className="text-base text-gray-100 font-semibold mt-0.5">{value}</p>
     </div>
   );
 }

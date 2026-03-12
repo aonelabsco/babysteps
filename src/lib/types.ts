@@ -1,6 +1,22 @@
+export type BabySex = 'male' | 'female';
+
 export interface Baby {
   id: string;
   name: string;
+  createdAt: number;
+  birthday?: number; // Unix timestamp
+  sex?: BabySex;
+}
+
+export interface GrowthRecord {
+  id: string;
+  familyId: string;
+  babyId: string;
+  date: number; // Unix timestamp
+  weight?: number; // kg
+  length?: number; // cm
+  headCircumference?: number; // cm
+  createdBy: string;
   createdAt: number;
 }
 
