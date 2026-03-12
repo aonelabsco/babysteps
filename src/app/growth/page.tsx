@@ -9,16 +9,19 @@ import { subscribeToGrowthRecords, addGrowthRecord, deleteGrowthRecord } from '@
 import type { GrowthRecord } from '@/lib/types';
 
 function formatDate(ts: number): string {
-  return new Date(ts).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+  return new Date(ts).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
 }
 
 function calculateAge(birthday: number): string {
   const now = new Date();
-  const birth = new Date(birthday);
-  let months = (now.getFullYear() - birth.getFullYear()) * 12 + (now.getMonth() - birth.getMonth());
-  if (now.getDate() < birth.getDate()) months--;
+  // Use UTC to extract the birth date consistently (birthday is stored as UTC noon)
+  const birthYear = new Date(birthday).getUTCFullYear();
+  const birthMonth = new Date(birthday).getUTCMonth();
+  const birthDay = new Date(birthday).getUTCDate();
+  let months = (now.getFullYear() - birthYear) * 12 + (now.getMonth() - birthMonth);
+  if (now.getDate() < birthDay) months--;
   if (months < 1) {
-    const days = Math.floor((now.getTime() - birth.getTime()) / (1000 * 60 * 60 * 24));
+    const days = Math.floor((now.getTime() - birthday) / (1000 * 60 * 60 * 24));
     return `${days} day${days !== 1 ? 's' : ''} old`;
   }
   if (months < 24) {
@@ -82,7 +85,7 @@ export default function GrowthPage() {
       await addGrowthRecord({
         familyId: family.id,
         babyId: selectedBabyId,
-        date: new Date(formDate + 'T12:00:00').getTime(),
+        date: new Date(formDate + 'T12:00:00Z').getTime(),
         weight: formWeight ? parseFloat(formWeight) : undefined,
         length: formLength ? parseFloat(formLength) : undefined,
         headCircumference: formHead ? parseFloat(formHead) : undefined,
@@ -133,7 +136,7 @@ export default function GrowthPage() {
                 )}
                 {selectedBaby.sex && (
                   <p className="text-base text-gray-500 mt-0.5">
-                    {selectedBaby.sex === 'male' ? '♂ boy' : '♀ girl'}
+                    {selectedBaby.sex === 'male' ? 'boy' : 'girl'}
                   </p>
                 )}
               </div>
@@ -193,7 +196,7 @@ export default function GrowthPage() {
                 type="date"
                 value={formDate}
                 onChange={(e) => setFormDate(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl border border-dark-600 bg-dark-800 text-gray-200 text-base focus:outline-none focus:ring-2 focus:ring-accent-500"
+                className="max-w-[200px] px-4 py-2.5 rounded-xl border border-dark-600 bg-dark-800 text-gray-200 text-base focus:outline-none focus:ring-2 focus:ring-accent-500"
               />
             </div>
             <div className="grid grid-cols-3 gap-2">
