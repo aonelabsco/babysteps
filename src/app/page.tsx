@@ -20,8 +20,8 @@ export default function LoginPage() {
 
   if (loading || familyLoading) {
     return (
-      <div className="min-h-screen bg-pink-50 flex items-center justify-center">
-        <div className="text-gray-400">Loading...</div>
+      <div className="min-h-screen bg-dark-950 flex items-center justify-center">
+        <div className="text-gray-500">Loading...</div>
       </div>
     );
   }
@@ -33,10 +33,10 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-pink-50 flex items-center justify-center p-6">
+    <div className="min-h-screen bg-dark-950 flex items-center justify-center p-6">
       <div className="w-full max-w-sm text-center space-y-8">
         <div>
-          <h1 className="text-4xl font-bold text-gray-900">baby steps</h1>
+          <h1 className="text-4xl font-bold text-gray-100">baby steps.</h1>
           <p className="text-gray-500 mt-2">track feeds, poops & diaper changes</p>
         </div>
 
@@ -50,7 +50,7 @@ export default function LoginPage() {
               }
             }
           }}
-          className="w-full py-3 rounded-xl bg-white text-gray-800 font-medium border border-pink-200 hover:bg-pink-50 transition-colors flex items-center justify-center gap-3 shadow-sm"
+          className="w-full py-3 rounded-xl bg-dark-800 text-gray-200 font-medium border border-dark-700 hover:bg-dark-700 transition-colors flex items-center justify-center gap-3 shadow-sm"
         >
           <svg width="18" height="18" viewBox="0 0 18 18">
             <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/>
@@ -61,7 +61,7 @@ export default function LoginPage() {
           Sign in with Google
         </button>
 
-        <p className="text-xs text-gray-400">
+        <p className="text-xs text-gray-600">
           Both parents sign in and share a family code to sync data
         </p>
       </div>

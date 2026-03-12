@@ -1,11 +1,11 @@
 {
-  "name": "baby steps",
-  "short_name": "baby steps",
+  "name": "baby steps.",
+  "short_name": "baby steps.",
   "description": "track your baby's feeds, poops & diaper changes",
   "start_url": "/dashboard",
   "display": "standalone",
-  "background_color": "#FFF5F7",
-  "theme_color": "#FFF5F7",
+  "background_color": "#0a0a0f",
+  "theme_color": "#0a0a0f",
   "orientation": "portrait",
   "icons": [
     {

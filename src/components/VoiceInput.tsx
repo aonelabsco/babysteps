@@ -113,8 +113,8 @@ export default function VoiceInput({ babyNames, onParsed, disabled }: VoiceInput
         disabled={disabled}
         className={`w-full py-4 rounded-2xl text-lg font-medium transition-all ${
           listening
-            ? 'bg-pink-600 text-white animate-pulse'
-            : 'bg-pink-500 text-white hover:bg-pink-600 active:bg-pink-700'
+            ? 'bg-accent-600 text-white animate-pulse'
+            : 'bg-accent-500 text-white hover:bg-accent-600 active:bg-accent-700'
         } disabled:opacity-50 disabled:cursor-not-allowed`}
       >
         {listening ? (
@@ -130,14 +130,14 @@ export default function VoiceInput({ babyNames, onParsed, disabled }: VoiceInput
 
       {/* Transcript */}
       {transcript && (
-        <p className="text-center text-gray-500 text-sm italic">
+        <p className="text-center text-gray-400 text-sm italic">
           &ldquo;{transcript}&rdquo;
         </p>
       )}
 
       {/* Error */}
       {error && (
-        <p className="text-center text-pink-600 text-sm">{error}</p>
+        <p className="text-center text-red-400 text-sm">{error}</p>
       )}
 
       {/* Manual text input */}
@@ -148,12 +148,12 @@ export default function VoiceInput({ babyNames, onParsed, disabled }: VoiceInput
           onChange={(e) => setManualInput(e.target.value)}
           placeholder='Or type: "fed 120 ml", "pooped big"...'
           disabled={disabled}
-          className="flex-1 px-4 py-3 rounded-xl border border-pink-200 bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-300 disabled:opacity-50"
+          className="flex-1 px-4 py-3 rounded-xl border border-dark-600 bg-dark-800 text-gray-200 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-accent-500 disabled:opacity-50"
         />
         <button
           type="submit"
           disabled={disabled || !manualInput.trim()}
-          className="px-5 py-3 rounded-xl bg-gray-900 text-white font-medium hover:bg-gray-800 disabled:opacity-50"
+          className="px-5 py-3 rounded-xl bg-dark-700 text-gray-200 font-medium hover:bg-dark-600 disabled:opacity-50"
         >
           Log
         </button>
@@ -164,14 +164,14 @@ export default function VoiceInput({ babyNames, onParsed, disabled }: VoiceInput
         <button
           onClick={() => processText('diaper changed for pee')}
           disabled={disabled}
-          className="flex-1 py-2.5 rounded-xl border border-pink-200 text-gray-700 text-sm font-medium hover:bg-pink-50 active:bg-pink-100 disabled:opacity-50"
+          className="flex-1 py-2.5 rounded-xl border border-dark-600 text-gray-300 text-sm font-medium hover:bg-dark-800 active:bg-dark-700 disabled:opacity-50"
         >
           Pee
         </button>
         <button
           onClick={() => processText('pooped medium')}
           disabled={disabled}
-          className="flex-1 py-2.5 rounded-xl border border-pink-200 text-gray-700 text-sm font-medium hover:bg-pink-50 active:bg-pink-100 disabled:opacity-50"
+          className="flex-1 py-2.5 rounded-xl border border-dark-600 text-gray-300 text-sm font-medium hover:bg-dark-800 active:bg-dark-700 disabled:opacity-50"
         >
           Poop
         </button>
@@ -181,7 +181,7 @@ export default function VoiceInput({ babyNames, onParsed, disabled }: VoiceInput
             if (qty) processText(`fed ${qty}`);
           }}
           disabled={disabled}
-          className="flex-1 py-2.5 rounded-xl border border-pink-200 text-gray-700 text-sm font-medium hover:bg-pink-50 active:bg-pink-100 disabled:opacity-50"
+          className="flex-1 py-2.5 rounded-xl border border-dark-600 text-gray-300 text-sm font-medium hover:bg-dark-800 active:bg-dark-700 disabled:opacity-50"
         >
           Feed
         </button>
