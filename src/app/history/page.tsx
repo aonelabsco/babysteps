@@ -106,7 +106,7 @@ export default function HistoryPage() {
             <button
               key={f.key}
               onClick={() => setFilter(f.key)}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors whitespace-nowrap ${
+              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${
                 filter === f.key
                   ? 'bg-accent-500 text-white'
                   : 'bg-dark-800 text-gray-400 border border-dark-700'
@@ -135,8 +135,8 @@ export default function HistoryPage() {
 function AvgBox({ label, value }: { label: string; value: string }) {
   return (
     <div className="bg-dark-800 rounded-xl p-2.5 text-center">
-      <p className="text-sm text-gray-100 font-semibold">{value}</p>
-      <p className="text-[10px] text-gray-500 mt-0.5">{label}</p>
+      <p className="text-base text-gray-100 font-semibold">{value}</p>
+      <p className="text-xs text-gray-500 mt-0.5">{label}</p>
     </div>
   );
 }

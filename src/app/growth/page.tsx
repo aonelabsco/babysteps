@@ -1,0 +1,293 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuthContext } from '@/components/AuthProvider';
+import BabySelector from '@/components/BabySelector';
+import Header from '@/components/Header';
+import { subscribeToGrowthRecords, addGrowthRecord, deleteGrowthRecord } from '@/lib/firebase';
+import type { GrowthRecord } from '@/lib/types';
+
+function formatDate(ts: number): string {
+  return new Date(ts).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function calculateAge(birthday: number): string {
+  const now = new Date();
+  const birth = new Date(birthday);
+  let months = (now.getFullYear() - birth.getFullYear()) * 12 + (now.getMonth() - birth.getMonth());
+  if (now.getDate() < birth.getDate()) months--;
+  if (months < 1) {
+    const days = Math.floor((now.getTime() - birth.getTime()) / (1000 * 60 * 60 * 24));
+    return `${days} day${days !== 1 ? 's' : ''} old`;
+  }
+  if (months < 24) {
+    return `${months} month${months !== 1 ? 's' : ''} old`;
+  }
+  const years = Math.floor(months / 12);
+  const remainingMonths = months % 12;
+  return remainingMonths > 0
+    ? `${years} yr${years !== 1 ? 's' : ''} ${remainingMonths} mo`
+    : `${years} year${years !== 1 ? 's' : ''} old`;
+}
+
+export default function GrowthPage() {
+  const { user, loading, family, familyLoading } = useAuthContext();
+  const router = useRouter();
+  const [selectedBabyId, setSelectedBabyId] = useState<string | null>(null);
+  const [records, setRecords] = useState<GrowthRecord[]>([]);
+  const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  // Form state
+  const [formDate, setFormDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [formWeight, setFormWeight] = useState('');
+  const [formLength, setFormLength] = useState('');
+  const [formHead, setFormHead] = useState('');
+
+  useEffect(() => {
+    if (!loading && !user) router.replace('/');
+    if (!loading && !familyLoading && !family) router.replace('/');
+  }, [user, loading, family, familyLoading, router]);
+
+  useEffect(() => {
+    if (family?.babies?.length && !selectedBabyId) {
+      setSelectedBabyId(family.babies[0].id);
+    }
+  }, [family?.babies, selectedBabyId]);
+
+  useEffect(() => {
+    if (!family?.id || !selectedBabyId) return;
+    const unsub = subscribeToGrowthRecords(family.id, selectedBabyId, setRecords);
+    return unsub;
+  }, [family?.id, selectedBabyId]);
+
+  if (loading || familyLoading || !family) {
+    return (
+      <div className="min-h-screen bg-dark-950 flex items-center justify-center">
+        <div className="text-gray-500">loading...</div>
+      </div>
+    );
+  }
+
+  const selectedBaby = family.babies?.find((b) => b.id === selectedBabyId);
+
+  const handleAdd = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!family || !user || !selectedBabyId) return;
+    if (!formWeight && !formLength && !formHead) return;
+
+    setSaving(true);
+    try {
+      await addGrowthRecord({
+        familyId: family.id,
+        babyId: selectedBabyId,
+        date: new Date(formDate).getTime(),
+        weight: formWeight ? parseFloat(formWeight) : undefined,
+        length: formLength ? parseFloat(formLength) : undefined,
+        headCircumference: formHead ? parseFloat(formHead) : undefined,
+        createdBy: user.uid,
+        createdAt: Date.now(),
+      });
+      setShowForm(false);
+      setFormWeight('');
+      setFormLength('');
+      setFormHead('');
+    } catch {
+      alert('Failed to save');
+    }
+    setSaving(false);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Delete this record?')) return;
+    try {
+      await deleteGrowthRecord(id);
+    } catch {
+      alert('Failed to delete');
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-dark-950 pb-20">
+      <div className="max-w-lg mx-auto px-4 pt-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-bold text-gray-100">growth</h1>
+          <BabySelector
+            babies={family.babies || []}
+            selectedId={selectedBabyId}
+            onSelect={setSelectedBabyId}
+          />
+        </div>
+
+        {/* Baby info card */}
+        {selectedBaby && (
+          <div className="bg-dark-900 rounded-2xl p-4 border border-dark-700">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-lg font-semibold text-gray-100">{selectedBaby.name}</p>
+                {selectedBaby.birthday && (
+                  <p className="text-sm text-gray-400">
+                    {calculateAge(selectedBaby.birthday)} · born {formatDate(selectedBaby.birthday)}
+                  </p>
+                )}
+                {selectedBaby.sex && (
+                  <p className="text-sm text-gray-500 mt-0.5">
+                    {selectedBaby.sex === 'male' ? '♂ boy' : '♀ girl'}
+                  </p>
+                )}
+              </div>
+              {!selectedBaby.birthday && (
+                <button
+                  onClick={() => router.push('/settings')}
+                  className="text-sm text-accent-400 hover:text-accent-300"
+                >
+                  add birthday
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Latest measurements */}
+        {records.length > 0 && (
+          <div className="bg-dark-900 rounded-2xl p-4 border border-dark-700">
+            <h2 className="text-sm font-semibold text-gray-500 mb-3">latest measurements</h2>
+            <div className="grid grid-cols-3 gap-2">
+              <div className="bg-dark-800 rounded-xl p-3 text-center">
+                <p className="text-lg text-gray-100 font-semibold">
+                  {records[0].weight ? `${records[0].weight} kg` : '--'}
+                </p>
+                <p className="text-xs text-gray-500 mt-0.5">weight</p>
+              </div>
+              <div className="bg-dark-800 rounded-xl p-3 text-center">
+                <p className="text-lg text-gray-100 font-semibold">
+                  {records[0].length ? `${records[0].length} cm` : '--'}
+                </p>
+                <p className="text-xs text-gray-500 mt-0.5">length</p>
+              </div>
+              <div className="bg-dark-800 rounded-xl p-3 text-center">
+                <p className="text-lg text-gray-100 font-semibold">
+                  {records[0].headCircumference ? `${records[0].headCircumference} cm` : '--'}
+                </p>
+                <p className="text-xs text-gray-500 mt-0.5">head</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Add record button / form */}
+        {!showForm ? (
+          <button
+            onClick={() => setShowForm(true)}
+            className="w-full py-3.5 rounded-xl text-base font-semibold bg-accent-500 text-white hover:bg-accent-600 transition-colors"
+          >
+            + add measurement
+          </button>
+        ) : (
+          <form onSubmit={handleAdd} className="bg-dark-900 rounded-2xl p-4 border border-dark-700 space-y-3">
+            <h2 className="text-sm font-semibold text-gray-500">new measurement</h2>
+            <div>
+              <label className="text-sm text-gray-400 mb-1 block">date</label>
+              <input
+                type="date"
+                value={formDate}
+                onChange={(e) => setFormDate(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl border border-dark-600 bg-dark-800 text-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-accent-500"
+              />
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <label className="text-sm text-gray-400 mb-1 block">weight (kg)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={formWeight}
+                  onChange={(e) => setFormWeight(e.target.value)}
+                  placeholder="3.5"
+                  className="w-full px-3 py-2.5 rounded-xl border border-dark-600 bg-dark-800 text-gray-200 text-sm placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
+                />
+              </div>
+              <div>
+                <label className="text-sm text-gray-400 mb-1 block">length (cm)</label>
+                <input
+                  type="number"
+                  step="0.1"
+                  value={formLength}
+                  onChange={(e) => setFormLength(e.target.value)}
+                  placeholder="50"
+                  className="w-full px-3 py-2.5 rounded-xl border border-dark-600 bg-dark-800 text-gray-200 text-sm placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
+                />
+              </div>
+              <div>
+                <label className="text-sm text-gray-400 mb-1 block">head (cm)</label>
+                <input
+                  type="number"
+                  step="0.1"
+                  value={formHead}
+                  onChange={(e) => setFormHead(e.target.value)}
+                  placeholder="35"
+                  className="w-full px-3 py-2.5 rounded-xl border border-dark-600 bg-dark-800 text-gray-200 text-sm placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="submit"
+                disabled={saving || (!formWeight && !formLength && !formHead)}
+                className="flex-1 py-2.5 rounded-xl bg-accent-500 text-white font-medium hover:bg-accent-600 disabled:opacity-50 text-sm"
+              >
+                {saving ? 'saving...' : 'save'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowForm(false)}
+                className="px-5 py-2.5 rounded-xl bg-dark-800 text-gray-400 hover:bg-dark-700 text-sm"
+              >
+                cancel
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* History */}
+        {records.length > 0 && (
+          <div className="bg-dark-900 rounded-2xl p-4 border border-dark-700">
+            <h2 className="text-sm font-semibold text-gray-500 mb-3">history</h2>
+            <div className="space-y-2">
+              {records.map((r) => (
+                <div key={r.id} className="flex items-center justify-between py-2.5 px-3 rounded-xl bg-dark-800 group">
+                  <div>
+                    <p className="text-sm text-gray-300 font-medium">{formatDate(r.date)}</p>
+                    <p className="text-sm text-gray-500">
+                      {[
+                        r.weight && `${r.weight} kg`,
+                        r.length && `${r.length} cm`,
+                        r.headCircumference && `head ${r.headCircumference} cm`,
+                      ].filter(Boolean).join(' · ')}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleDelete(r.id)}
+                    className="text-gray-600 hover:text-red-400 transition-colors"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="3 6 5 6 21 6" />
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                    </svg>
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <p className="text-xs text-center text-gray-600">
+          track weight, length & head circumference for doctor visits.
+        </p>
+      </div>
+
+      <Header />
+    </div>
+  );
+}

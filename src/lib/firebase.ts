@@ -26,7 +26,7 @@ import {
   arrayUnion,
   arrayRemove,
 } from 'firebase/firestore';
-import type { Family, FamilyMember, Baby, BabyEvent } from './types';
+import type { Family, FamilyMember, Baby, BabyEvent, GrowthRecord } from './types';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || 'dummy',
@@ -197,6 +197,51 @@ export async function removeBaby(familyId: string, baby: Baby) {
   await updateDoc(doc(db, 'families', familyId), {
     babies: arrayRemove(baby),
   });
+}
+
+export async function updateBaby(familyId: string, updatedBaby: Baby, oldBaby: Baby) {
+  // Firestore arrayRemove/arrayUnion requires exact match, so remove old and add new
+  await updateDoc(doc(db, 'families', familyId), {
+    babies: arrayRemove(oldBaby),
+  });
+  await updateDoc(doc(db, 'families', familyId), {
+    babies: arrayUnion(updatedBaby),
+  });
+}
+
+// Growth records
+export async function addGrowthRecord(record: Omit<GrowthRecord, 'id'>): Promise<string> {
+  const ref = await addDoc(collection(db, 'growth'), record);
+  return ref.id;
+}
+
+export async function deleteGrowthRecord(recordId: string) {
+  await deleteDoc(doc(db, 'growth', recordId));
+}
+
+export function subscribeToGrowthRecords(
+  familyId: string,
+  babyId: string,
+  callback: (records: GrowthRecord[]) => void,
+  onError?: (err: Error) => void
+) {
+  const q = query(
+    collection(db, 'growth'),
+    where('familyId', '==', familyId),
+    where('babyId', '==', babyId),
+    orderBy('date', 'desc')
+  );
+  return onSnapshot(
+    q,
+    (snap) => {
+      const records = snap.docs.map((d) => ({ id: d.id, ...d.data() } as GrowthRecord));
+      callback(records);
+    },
+    (err) => {
+      console.error('Firestore subscribeToGrowthRecords error:', err);
+      if (onError) onError(err);
+    }
+  );
 }
 
 export async function setDefaultUnit(familyId: string, unit: 'ml' | 'oz') {

@@ -123,26 +123,26 @@ export default function VoiceInput({ babyNames, onParsed, disabled }: VoiceInput
           type="text"
           value={manualInput}
           onChange={(e) => setManualInput(e.target.value)}
-          placeholder='type or speak: "fed 120 ml", "slept"...'
+          placeholder='try: "fed 120ml at 12:15"'
           disabled={disabled}
-          className="flex-1 px-4 py-3 rounded-xl border border-dark-600 bg-dark-800 text-gray-200 placeholder-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-accent-500 disabled:opacity-50"
+          className="flex-1 px-4 py-3 rounded-xl border border-dark-600 bg-dark-800 text-gray-200 placeholder-gray-600 text-base focus:outline-none focus:ring-2 focus:ring-accent-500 disabled:opacity-50"
         />
         <button
           type="submit"
           disabled={disabled || !manualInput.trim()}
-          className="px-4 py-3 rounded-xl bg-dark-700 text-gray-200 font-medium hover:bg-dark-600 disabled:opacity-50 text-sm"
+          className="px-4 py-3 rounded-xl bg-dark-700 text-gray-200 font-medium hover:bg-dark-600 disabled:opacity-50 text-base"
         >
           log
         </button>
       </form>
 
       {transcript && (
-        <p className="text-center text-gray-400 text-xs italic">
+        <p className="text-center text-gray-400 text-sm italic">
           &ldquo;{transcript}&rdquo;
         </p>
       )}
       {error && (
-        <p className="text-center text-red-400 text-xs">{error}</p>
+        <p className="text-center text-red-400 text-sm">{error}</p>
       )}
     </div>
   );

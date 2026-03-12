@@ -197,7 +197,7 @@ export default function DashboardPage() {
             />
 
             <div>
-              <h3 className="text-sm font-semibold text-gray-500 mb-2">recent</h3>
+              <h3 className="text-base font-semibold text-gray-500 mb-2">recent</h3>
               <EventLog events={events} limit={5} />
             </div>
           </>
