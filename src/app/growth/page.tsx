@@ -61,7 +61,9 @@ export default function GrowthPage() {
 
   useEffect(() => {
     if (!family?.id || !selectedBabyId) return;
-    const unsub = subscribeToGrowthRecords(family.id, selectedBabyId, setRecords);
+    const unsub = subscribeToGrowthRecords(family.id, selectedBabyId, setRecords, (err) => {
+      console.error('Growth subscription error:', err.message);
+    });
     return unsub;
   }, [family?.id, selectedBabyId]);
 
@@ -74,6 +76,8 @@ export default function GrowthPage() {
   }
 
   const selectedBaby = family.babies?.find((b) => b.id === selectedBabyId);
+  const wUnit = family.weightUnit || 'kg';
+  const lUnit = family.lengthUnit || 'cm';
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,7 +96,9 @@ export default function GrowthPage() {
       if (formWeight) record.weight = parseFloat(formWeight);
       if (formLength) record.length = parseFloat(formLength);
       if (formHead) record.headCircumference = parseFloat(formHead);
-      await addGrowthRecord(record);
+      const id = await addGrowthRecord(record);
+      // Optimistic update so the record shows immediately
+      setRecords((prev) => [{ id, ...record } as GrowthRecord, ...prev].sort((a, b) => b.date - a.date));
       setShowForm(false);
       setFormWeight('');
       setFormLength('');
@@ -160,19 +166,19 @@ export default function GrowthPage() {
             <div className="grid grid-cols-3 gap-2">
               <div className="bg-dark-800 rounded-xl p-3 text-center">
                 <p className="text-xl text-gray-100 font-semibold">
-                  {records[0].weight ? `${records[0].weight} kg` : '--'}
+                  {records[0].weight ? `${records[0].weight} ${wUnit}` : '--'}
                 </p>
                 <p className="text-base text-gray-500 mt-0.5">weight</p>
               </div>
               <div className="bg-dark-800 rounded-xl p-3 text-center">
                 <p className="text-xl text-gray-100 font-semibold">
-                  {records[0].length ? `${records[0].length} cm` : '--'}
+                  {records[0].length ? `${records[0].length} ${lUnit}` : '--'}
                 </p>
                 <p className="text-base text-gray-500 mt-0.5">length</p>
               </div>
               <div className="bg-dark-800 rounded-xl p-3 text-center">
                 <p className="text-xl text-gray-100 font-semibold">
-                  {records[0].headCircumference ? `${records[0].headCircumference} cm` : '--'}
+                  {records[0].headCircumference ? `${records[0].headCircumference} ${lUnit}` : '--'}
                 </p>
                 <p className="text-base text-gray-500 mt-0.5">head</p>
               </div>
@@ -202,29 +208,29 @@ export default function GrowthPage() {
             </div>
             <div className="grid grid-cols-3 gap-2">
               <div>
-                <label className="text-base text-gray-400 mb-1 block">weight (kg)</label>
+                <label className="text-base text-gray-400 mb-1 block">weight ({wUnit})</label>
                 <input
                   type="number"
                   step="0.01"
                   value={formWeight}
                   onChange={(e) => setFormWeight(e.target.value)}
-                  placeholder="3.5"
+                  placeholder={wUnit === 'lbs' ? '7.7' : '3.5'}
                   className="w-full px-3 py-2.5 rounded-xl border border-dark-600 bg-dark-800 text-gray-200 text-base placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
                 />
               </div>
               <div>
-                <label className="text-base text-gray-400 mb-1 block">length (cm)</label>
+                <label className="text-base text-gray-400 mb-1 block">length ({lUnit})</label>
                 <input
                   type="number"
                   step="0.1"
                   value={formLength}
                   onChange={(e) => setFormLength(e.target.value)}
-                  placeholder="50"
+                  placeholder={lUnit === 'in' ? '20' : '50'}
                   className="w-full px-3 py-2.5 rounded-xl border border-dark-600 bg-dark-800 text-gray-200 text-base placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-accent-500"
                 />
               </div>
               <div>
-                <label className="text-base text-gray-400 mb-1 block">head (cm)</label>
+                <label className="text-base text-gray-400 mb-1 block">head ({lUnit})</label>
                 <input
                   type="number"
                   step="0.1"
@@ -265,9 +271,9 @@ export default function GrowthPage() {
                     <p className="text-base text-gray-300 font-medium">{formatDate(r.date)}</p>
                     <p className="text-base text-gray-500">
                       {[
-                        r.weight && `${r.weight} kg`,
-                        r.length && `${r.length} cm`,
-                        r.headCircumference && `head ${r.headCircumference} cm`,
+                        r.weight && `${r.weight} ${wUnit}`,
+                        r.length && `${r.length} ${lUnit}`,
+                        r.headCircumference && `head ${r.headCircumference} ${lUnit}`,
                       ].filter(Boolean).join(' · ')}
                     </p>
                   </div>
