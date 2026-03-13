@@ -248,6 +248,10 @@ export async function setDefaultUnit(familyId: string, unit: 'ml' | 'oz') {
   await updateDoc(doc(db, 'families', familyId), { defaultUnit: unit });
 }
 
+export async function updateFamilyUnits(familyId: string, units: Record<string, string>) {
+  await updateDoc(doc(db, 'families', familyId), units);
+}
+
 export async function addEvent(event: Omit<BabyEvent, 'id'>): Promise<string> {
   const ref = await addDoc(collection(db, 'events'), event);
   return ref.id;

@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthContext } from '@/components/AuthProvider';
 import Header from '@/components/Header';
-import { addBaby, removeBaby, updateBaby, signOut } from '@/lib/firebase';
-import type { Baby, BabySex } from '@/lib/types';
+import { addBaby, removeBaby, updateBaby, updateFamilyUnits, signOut } from '@/lib/firebase';
+import type { Baby, BabySex, VolumeUnit, WeightUnit, LengthUnit } from '@/lib/types';
 
 function formatBirthday(ts: number): string {
   return new Date(ts).toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
@@ -13,6 +13,7 @@ function formatBirthday(ts: number): string {
 
 function BabyProfileEditor({ baby, familyId }: { baby: Baby; familyId: string }) {
   const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(baby.name);
   const [birthday, setBirthday] = useState(
     baby.birthday ? new Date(baby.birthday).toISOString().split('T')[0] : ''
   );
@@ -20,10 +21,12 @@ function BabyProfileEditor({ baby, familyId }: { baby: Baby; familyId: string })
   const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
+    if (!name.trim()) return;
     setSaving(true);
     try {
       const updated: Baby = {
         ...baby,
+        name: name.trim(),
         birthday: birthday ? new Date(birthday + 'T12:00:00Z').getTime() : undefined,
         sex: sex || undefined,
       };
@@ -62,7 +65,15 @@ function BabyProfileEditor({ baby, familyId }: { baby: Baby; familyId: string })
 
   return (
     <div className="py-3 px-4 rounded-xl bg-dark-800 space-y-3">
-      <p className="text-lg text-gray-200 font-medium">{baby.name}</p>
+      <div>
+        <label className="text-base text-gray-400 mb-1 block">name</label>
+        <input
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className="max-w-[200px] px-4 py-2.5 rounded-xl border border-dark-600 bg-dark-900 text-gray-200 text-base focus:outline-none focus:ring-2 focus:ring-accent-500"
+        />
+      </div>
       <div>
         <label className="text-base text-gray-400 mb-1 block">birthday</label>
         <input
@@ -107,6 +118,32 @@ function BabyProfileEditor({ baby, familyId }: { baby: Baby; familyId: string })
         >
           cancel
         </button>
+      </div>
+    </div>
+  );
+}
+
+function UnitPicker<T extends string>({ label, value, options, onChange }: {
+  label: string;
+  value: T;
+  options: readonly (readonly [T, string])[];
+  onChange: (value: T) => void;
+}) {
+  return (
+    <div>
+      <p className="text-base text-gray-400 mb-1">{label}</p>
+      <div className="flex gap-2">
+        {options.map(([val, display]) => (
+          <button
+            key={val}
+            onClick={() => onChange(val)}
+            className={`flex-1 py-2.5 rounded-xl text-base font-medium transition-colors ${
+              value === val ? 'bg-accent-500 text-white' : 'bg-dark-800 text-gray-400 hover:bg-dark-700'
+            }`}
+          >
+            {display}
+          </button>
+        ))}
       </div>
     </div>
   );
@@ -223,14 +260,28 @@ export default function SettingsPage() {
           </form>
         </div>
 
-        {/* Default unit */}
-        {family.defaultUnit && (
-          <div className="bg-dark-900 rounded-2xl p-5 border border-dark-700">
-            <h2 className="text-base font-semibold text-gray-500 mb-1">default unit</h2>
-            <p className="text-lg text-gray-200">{family.defaultUnit === 'ml' ? 'milliliters (ml)' : 'ounces (oz)'}</p>
-            <p className="text-base text-gray-600 mt-1">set by first feed entry. log a feed with a different unit to change.</p>
-          </div>
-        )}
+        {/* Units */}
+        <div className="bg-dark-900 rounded-2xl p-5 border border-dark-700 space-y-4">
+          <h2 className="text-base font-semibold text-gray-500">units</h2>
+          <UnitPicker
+            label="feed volume"
+            value={family.defaultUnit || 'ml'}
+            options={[['ml', 'ml'], ['oz', 'oz']] as const}
+            onChange={(v) => updateFamilyUnits(family.id, { defaultUnit: v })}
+          />
+          <UnitPicker
+            label="weight"
+            value={family.weightUnit || 'kg'}
+            options={[['kg', 'kg'], ['lbs', 'lbs']] as const}
+            onChange={(v) => updateFamilyUnits(family.id, { weightUnit: v })}
+          />
+          <UnitPicker
+            label="length"
+            value={family.lengthUnit || 'cm'}
+            options={[['cm', 'cm'], ['in', 'in']] as const}
+            onChange={(v) => updateFamilyUnits(family.id, { lengthUnit: v })}
+          />
+        </div>
 
         {/* Account */}
         <div className="bg-dark-900 rounded-2xl p-5 border border-dark-700 space-y-3">

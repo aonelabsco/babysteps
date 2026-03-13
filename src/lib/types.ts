@@ -27,11 +27,17 @@ export interface FamilyMember {
   joinedAt: number;
 }
 
+export type VolumeUnit = 'ml' | 'oz';
+export type WeightUnit = 'kg' | 'lbs';
+export type LengthUnit = 'cm' | 'in';
+
 export interface Family {
   id: string;
   name: string;
   code: string;
-  defaultUnit: 'ml' | 'oz' | null;
+  defaultUnit: VolumeUnit | null;
+  weightUnit?: WeightUnit;
+  lengthUnit?: LengthUnit;
   createdBy: string;
   createdAt: number;
   babies: Baby[];
