@@ -82,7 +82,8 @@ export default function EventLog({ events, limit, showDelete = false, collapsibl
   const [editTime, setEditTime] = useState('');
   const [editQuantity, setEditQuantity] = useState('');
   const [editSize, setEditSize] = useState<PoopSize>('medium');
-  const [collapsedDates, setCollapsedDates] = useState<Set<string>>(new Set());
+  // When collapsible, only "today" is expanded by default
+  const [expandedDates, setExpandedDates] = useState<Set<string>>(new Set(['today']));
   const displayed = limit ? events.slice(0, limit) : events;
 
   if (displayed.length === 0) {
@@ -137,13 +138,13 @@ export default function EventLog({ events, limit, showDelete = false, collapsibl
   };
 
   const toggleDate = (dateStr: string) => {
-    const next = new Set(collapsedDates);
+    const next = new Set(expandedDates);
     if (next.has(dateStr)) {
       next.delete(dateStr);
     } else {
       next.add(dateStr);
     }
-    setCollapsedDates(next);
+    setExpandedDates(next);
   };
 
   // Group events by date
@@ -162,7 +163,7 @@ export default function EventLog({ events, limit, showDelete = false, collapsibl
   return (
     <div className="space-y-1">
       {grouped.map((group) => {
-        const isCollapsed = collapsible && collapsedDates.has(group.date);
+        const isCollapsed = collapsible && !expandedDates.has(group.date);
         const showHeader = !limit;
 
         return (

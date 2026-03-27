@@ -9,8 +9,9 @@ import QuickActions from '@/components/QuickActions';
 import VoiceInput from '@/components/VoiceInput';
 import EventLog from '@/components/EventLog';
 import Header from '@/components/Header';
+import Onboarding from '@/components/Onboarding';
 import { subscribeToDayEvents, addEvent, setDefaultUnit } from '@/lib/firebase';
-import { useDaySummary, useFeedAlert } from '@/lib/hooks';
+import { useDaySummary, useFeedAlert, buildEventsSummary } from '@/lib/hooks';
 import type { BabyEvent, EventType, ParsedInput, PoopSize, BreastSide, Allergen } from '@/lib/types';
 
 function NoteInput({ onSubmit, disabled }: { onSubmit: (text: string) => void; disabled?: boolean }) {
@@ -64,7 +65,7 @@ function NoteInput({ onSubmit, disabled }: { onSubmit: (text: string) => void; d
 }
 
 export default function DashboardPage() {
-  const { user, loading, family, familyLoading } = useAuthContext();
+  const { user, loading, family, familyLoading, refreshFamily } = useAuthContext();
   const router = useRouter();
   const [selectedBabyId, setSelectedBabyId] = useState<string | null>(null);
   const [events, setEvents] = useState<BabyEvent[]>([]);
@@ -105,6 +106,8 @@ export default function DashboardPage() {
 
   const summary = useDaySummary(events);
   const feedAlert = useFeedAlert(summary.lastFeedTime);
+  const eventsSummary = buildEventsSummary(events);
+  const selectedBabyName = family?.babies?.find((b) => b.id === selectedBabyId)?.name;
 
   const showToast = useCallback((msg: string) => {
     setToast(msg);
@@ -229,6 +232,10 @@ export default function DashboardPage() {
 
   const noBabies = !family.babies || family.babies.length === 0;
 
+  if (noBabies) {
+    return <Onboarding familyId={family.id} onComplete={refreshFamily} />;
+  }
+
   return (
     <div className="min-h-screen bg-dark-950 pb-24">
       <div className="max-w-lg mx-auto px-4 pt-6 space-y-4">
@@ -253,18 +260,6 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {noBabies ? (
-          <div className="bg-dark-900 rounded-2xl p-6 border border-dark-700 text-center">
-            <p className="text-gray-400 mb-3">add your baby to get started</p>
-            <button
-              onClick={() => router.push('/settings')}
-              className="px-6 py-2 rounded-xl bg-accent-500 text-white font-medium hover:bg-accent-600"
-            >
-              go to settings
-            </button>
-          </div>
-        ) : (
-          <>
             <SummaryCard summary={summary} feedAlert={feedAlert} />
 
             {/* Family notes notification */}
@@ -309,6 +304,8 @@ export default function DashboardPage() {
               babyNames={family.babies.map((b) => b.name)}
               onParsed={handleParsed}
               disabled={saving}
+              eventsSummary={eventsSummary}
+              selectedBabyName={selectedBabyName}
             />
 
             {/* Quick note */}
@@ -318,8 +315,6 @@ export default function DashboardPage() {
               <h3 className="text-lg font-semibold text-gray-500 mb-2">recent</h3>
               <EventLog events={events} limit={5} />
             </div>
-          </>
-        )}
       </div>
 
       {toast && (

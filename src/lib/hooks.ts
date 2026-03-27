@@ -154,6 +154,49 @@ export function computeYesterday(events: BabyEvent[]): PeriodAverages {
   };
 }
 
+export function buildEventsSummary(events: BabyEvent[]): string {
+  if (events.length === 0) return 'No data available yet.';
+
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+  const startTs = startOfDay.getTime();
+  const today = events.filter((e) => e.timestamp >= startTs);
+
+  const lines: string[] = [];
+  const feeds = today.filter((e) => e.type === 'feed');
+  const breasts = today.filter((e) => e.type === 'breast');
+  const poops = today.filter((e) => e.type === 'poop');
+  const pees = today.filter((e) => e.type === 'pee');
+  const sleeps = today.filter((e) => e.type === 'sleep');
+  const wakes = today.filter((e) => e.type === 'wake');
+  const solids = today.filter((e) => e.type === 'solid');
+
+  const fmt = (ts: number) => new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  if (feeds.length > 0) {
+    const totalMl = feeds.reduce((s, e) => s + (e.quantity || 0), 0);
+    const unit = feeds[0].unit || 'ml';
+    lines.push(`Formula feeds today: ${feeds.length} (total ${totalMl} ${unit}). Last feed: ${fmt(feeds[0].timestamp)}.`);
+  }
+  if (breasts.length > 0) {
+    const totalMin = breasts.reduce((s, e) => s + (e.breastDuration || 0), 0);
+    lines.push(`Breastfeeds today: ${breasts.length}${totalMin > 0 ? ` (total ${totalMin} min)` : ''}. Last: ${fmt(breasts[0].timestamp)}.`);
+  }
+  if (solids.length > 0) {
+    const foods = solids.map((e) => e.foodName || 'food').join(', ');
+    lines.push(`Solid foods today: ${foods}.`);
+  }
+  if (poops.length > 0) lines.push(`Poops today: ${poops.length}. Last: ${fmt(poops[0].timestamp)}.`);
+  if (pees.length > 0) lines.push(`Pee diapers today: ${pees.length}.`);
+  if (sleeps.length > 0 || wakes.length > 0) {
+    const lastSW = [...sleeps, ...wakes].sort((a, b) => b.timestamp - a.timestamp)[0];
+    lines.push(`Sleep events today: ${sleeps.length} naps. Currently ${lastSW?.type === 'sleep' ? 'sleeping' : 'awake'}.`);
+  }
+
+  if (lines.length === 0) lines.push('No activity logged today yet.');
+  return lines.join('\n');
+}
+
 export function computeAverages(events: BabyEvent[], days: number): PeriodAverages {
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
