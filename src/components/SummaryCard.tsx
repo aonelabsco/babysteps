@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import type { DaySummary } from '@/lib/types';
 
 interface SummaryCardProps {
@@ -22,11 +23,30 @@ function timeSince(ts: number): string {
 }
 
 export default function SummaryCard({ summary, feedAlert }: SummaryCardProps) {
+  // Force re-render every 30 seconds so timeSince stays current
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => setTick((t) => t + 1), 30000);
+    return () => clearInterval(interval);
+  }, []);
+
   const sleepStatus = summary.lastSleepEvent
     ? summary.lastSleepEvent.type === 'sleep'
       ? `sleeping — ${timeSince(summary.lastSleepEvent.timestamp)}`
       : `awake — woke ${timeSince(summary.lastSleepEvent.timestamp)}`
     : '--';
+
+  const formatNapTime = (mins: number) => {
+    if (mins < 60) return `${mins}m`;
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return m > 0 ? `${h}h ${m}m` : `${h}h`;
+  };
+
+  const napInfo = [];
+  if (summary.totalNapMinutes > 0) napInfo.push(`total: ${formatNapTime(summary.totalNapMinutes)}`);
+  if (summary.lastNapMinutes !== null) napInfo.push(`last nap: ${formatNapTime(summary.lastNapMinutes)}`);
+  const napSummary = napInfo.length > 0 ? napInfo.join(' · ') : null;
 
   return (
     <div className="bg-dark-900 rounded-2xl p-4 shadow-sm border border-dark-700 space-y-3">
@@ -51,17 +71,18 @@ export default function SummaryCard({ summary, feedAlert }: SummaryCardProps) {
         />
         <StatBox label="poops today" value={String(summary.poopCount)} />
         <StatBox label="pee today" value={String(summary.peeCount)} />
-        <StatBox label="sleep" value={sleepStatus} span2 />
+        <StatBox label="sleep" value={sleepStatus} subtitle={napSummary} span2 />
       </div>
     </div>
   );
 }
 
-function StatBox({ label, value, span2 }: { label: string; value: string; span2?: boolean }) {
+function StatBox({ label, value, subtitle, span2 }: { label: string; value: string; subtitle?: string | null; span2?: boolean }) {
   return (
     <div className={`bg-dark-800 rounded-xl p-3 ${span2 ? 'col-span-2' : ''}`}>
       <p className="text-base text-gray-500 font-medium">{label}</p>
       <p className="text-lg text-gray-100 font-semibold mt-0.5">{value}</p>
+      {subtitle && <p className="text-sm text-gray-400 mt-0.5">{subtitle}</p>}
     </div>
   );
 }

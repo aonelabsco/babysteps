@@ -1,8 +1,9 @@
 'use client';
 
 import type { BabyEvent } from '@/lib/types';
-import { deleteEvent, updateEventTimestamp } from '@/lib/firebase';
+import { deleteEvent, updateEventTimestamp, updateEventFields } from '@/lib/firebase';
 import { useState } from 'react';
+import type { PoopSize } from '@/lib/types';
 
 interface EventLogProps {
   events: BabyEvent[];
@@ -58,6 +59,8 @@ export default function EventLog({ events, limit, showDelete = false, collapsibl
   const [deleting, setDeleting] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTime, setEditTime] = useState('');
+  const [editQuantity, setEditQuantity] = useState('');
+  const [editSize, setEditSize] = useState<PoopSize>('medium');
   const [collapsedDates, setCollapsedDates] = useState<Set<string>>(new Set());
   const displayed = limit ? events.slice(0, limit) : events;
 
@@ -78,27 +81,38 @@ export default function EventLog({ events, limit, showDelete = false, collapsibl
     setDeleting(null);
   };
 
-  const handleEditTime = async (eventId: string, currentTimestamp: number) => {
-    if (editingId === eventId) {
-      // Save
+  const startEditing = (event: BabyEvent) => {
+    setEditingId(event.id);
+    const d = new Date(event.timestamp);
+    setEditTime(`${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`);
+    if (event.type === 'feed') setEditQuantity(String(event.quantity || ''));
+    if (event.type === 'poop') setEditSize(event.size || 'medium');
+  };
+
+  const saveEdit = async (event: BabyEvent) => {
+    try {
+      // Update timestamp
       if (editTime) {
         const [hours, minutes] = editTime.split(':').map(Number);
-        const d = new Date(currentTimestamp);
+        const d = new Date(event.timestamp);
         d.setHours(hours, minutes);
-        try {
-          await updateEventTimestamp(eventId, d.getTime());
-        } catch {
-          alert('Failed to update time');
-        }
+        await updateEventTimestamp(event.id, d.getTime());
       }
-      setEditingId(null);
-      setEditTime('');
-    } else {
-      // Start editing
-      setEditingId(eventId);
-      const d = new Date(currentTimestamp);
-      setEditTime(`${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`);
+      // Update feed quantity
+      if (event.type === 'feed' && editQuantity) {
+        const qty = parseFloat(editQuantity);
+        if (!isNaN(qty)) await updateEventFields(event.id, { quantity: qty });
+      }
+      // Update poop size
+      if (event.type === 'poop') {
+        await updateEventFields(event.id, { size: editSize });
+      }
+    } catch {
+      alert('Failed to update');
     }
+    setEditingId(null);
+    setEditTime('');
+    setEditQuantity('');
   };
 
   const toggleDate = (dateStr: string) => {
@@ -164,9 +178,9 @@ export default function EventLog({ events, limit, showDelete = false, collapsibl
                     {showDelete && (
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={(e) => { e.stopPropagation(); handleEditTime(event.id, event.timestamp); }}
+                          onClick={(e) => { e.stopPropagation(); editingId === event.id ? saveEdit(event) : startEditing(event); }}
                           className="text-gray-600 hover:text-accent-400 transition-colors"
-                          title="Edit time"
+                          title="Edit"
                         >
                           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
@@ -186,17 +200,37 @@ export default function EventLog({ events, limit, showDelete = false, collapsibl
                       </div>
                     )}
                   </div>
-                  {/* Inline time editor */}
+                  {/* Inline editor */}
                   {editingId === event.id && (
-                    <div className="flex items-center gap-2 px-3 pb-2 ml-10">
+                    <div className="flex flex-wrap items-center gap-2 px-3 pb-2 ml-10">
                       <input
                         type="time"
                         value={editTime}
                         onChange={(e) => setEditTime(e.target.value)}
                         className="px-3 py-1.5 rounded-lg text-base bg-dark-800 text-gray-200 border border-dark-600 focus:outline-none focus:ring-1 focus:ring-accent-500"
                       />
+                      {event.type === 'feed' && (
+                        <input
+                          type="number"
+                          value={editQuantity}
+                          onChange={(e) => setEditQuantity(e.target.value)}
+                          placeholder="qty"
+                          className="w-20 px-3 py-1.5 rounded-lg text-base bg-dark-800 text-gray-200 border border-dark-600 focus:outline-none focus:ring-1 focus:ring-accent-500"
+                        />
+                      )}
+                      {event.type === 'poop' && (
+                        <select
+                          value={editSize}
+                          onChange={(e) => setEditSize(e.target.value as PoopSize)}
+                          className="px-3 py-1.5 rounded-lg text-base bg-dark-800 text-gray-200 border border-dark-600 focus:outline-none focus:ring-1 focus:ring-accent-500"
+                        >
+                          <option value="small">small</option>
+                          <option value="medium">medium</option>
+                          <option value="big">big</option>
+                        </select>
+                      )}
                       <button
-                        onClick={(e) => { e.stopPropagation(); handleEditTime(event.id, event.timestamp); }}
+                        onClick={(e) => { e.stopPropagation(); saveEdit(event); }}
                         className="px-3 py-1.5 rounded-lg text-base bg-accent-500 text-white font-medium hover:bg-accent-600"
                       >
                         save

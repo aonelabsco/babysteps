@@ -73,6 +73,8 @@ export interface DaySummary {
   peeCount: number;
   lastSleepEvent: BabyEvent | null;
   sleepCount: number;
+  totalNapMinutes: number;
+  lastNapMinutes: number | null;
 }
 
 export interface ParsedInput {

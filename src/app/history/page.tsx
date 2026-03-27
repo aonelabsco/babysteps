@@ -7,7 +7,7 @@ import BabySelector from '@/components/BabySelector';
 import EventLog from '@/components/EventLog';
 import Header from '@/components/Header';
 import { subscribeToEvents } from '@/lib/firebase';
-import { computeAverages } from '@/lib/hooks';
+import { computeAverages, computeYesterday } from '@/lib/hooks';
 import type { BabyEvent, EventType } from '@/lib/types';
 
 type FilterType = 'all' | EventType;
@@ -18,7 +18,7 @@ export default function HistoryPage() {
   const [selectedBabyId, setSelectedBabyId] = useState<string | null>(null);
   const [events, setEvents] = useState<BabyEvent[]>([]);
   const [filter, setFilter] = useState<FilterType>('all');
-  const [avgPeriod, setAvgPeriod] = useState<7 | 30>(7);
+  const [avgPeriod, setAvgPeriod] = useState<1 | 7 | 30>(7);
 
   useEffect(() => {
     if (!loading && !user) router.replace('/');
@@ -46,7 +46,7 @@ export default function HistoryPage() {
   }
 
   const filtered = filter === 'all' ? events : events.filter((e) => e.type === filter);
-  const averages = computeAverages(events, avgPeriod);
+  const averages = avgPeriod === 1 ? computeYesterday(events) : computeAverages(events, avgPeriod);
 
   const filters: { key: FilterType; label: string }[] = [
     { key: 'all', label: 'all' },
@@ -72,8 +72,16 @@ export default function HistoryPage() {
         {averages.daysCovered > 0 && (
           <div className="bg-dark-900 rounded-2xl p-4 border border-dark-700 space-y-3">
             <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-gray-500">averages</h2>
+              <h2 className="text-sm font-semibold text-gray-500">{avgPeriod === 1 ? 'yesterday' : 'averages'}</h2>
               <div className="flex gap-1">
+                <button
+                  onClick={() => setAvgPeriod(1)}
+                  className={`px-2.5 py-1 rounded-full text-sm font-medium transition-colors ${
+                    avgPeriod === 1 ? 'bg-accent-500 text-white' : 'bg-dark-800 text-gray-500'
+                  }`}
+                >
+                  1d
+                </button>
                 <button
                   onClick={() => setAvgPeriod(7)}
                   className={`px-2.5 py-1 rounded-full text-sm font-medium transition-colors ${
@@ -93,9 +101,9 @@ export default function HistoryPage() {
               </div>
             </div>
             <div className="grid grid-cols-3 gap-2">
-              <AvgBox label="feeds/day" value={String(averages.avgFeedsPerDay)} />
-              <AvgBox label={`${averages.milkUnit}/day`} value={String(averages.avgMilkPerDay)} />
-              <AvgBox label="poops/day" value={String(averages.avgPoopsPerDay)} />
+              <AvgBox label={avgPeriod === 1 ? 'feeds' : 'feeds/day'} value={String(averages.avgFeedsPerDay)} />
+              <AvgBox label={avgPeriod === 1 ? averages.milkUnit : `${averages.milkUnit}/day`} value={String(averages.avgMilkPerDay)} />
+              <AvgBox label={avgPeriod === 1 ? 'poops' : 'poops/day'} value={String(averages.avgPoopsPerDay)} />
             </div>
           </div>
         )}

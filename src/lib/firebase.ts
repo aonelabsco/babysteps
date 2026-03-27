@@ -22,6 +22,7 @@ import {
   query,
   where,
   orderBy,
+  limit,
   onSnapshot,
   arrayUnion,
   arrayRemove,
@@ -265,6 +266,10 @@ export async function updateEventTimestamp(eventId: string, newTimestamp: number
   await updateDoc(doc(db, 'events', eventId), { timestamp: newTimestamp });
 }
 
+export async function updateEventFields(eventId: string, fields: Record<string, unknown>) {
+  await updateDoc(doc(db, 'events', eventId), fields);
+}
+
 export function subscribeToEvents(
   familyId: string,
   babyId: string,
@@ -299,6 +304,7 @@ export function subscribeToDayEvents(
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
 
+  // Subscribe to today's events
   const q = query(
     collection(db, 'events'),
     where('familyId', '==', familyId),
@@ -306,15 +312,55 @@ export function subscribeToDayEvents(
     where('timestamp', '>=', startOfDay.getTime()),
     orderBy('timestamp', 'desc')
   );
-  return onSnapshot(
+
+  // Also fetch the most recent sleep/wake event before today (for cross-midnight sleep)
+  // Limit to 10 to avoid pulling entire history - just need to find last sleep/wake
+  const sleepQ = query(
+    collection(db, 'events'),
+    where('familyId', '==', familyId),
+    where('babyId', '==', babyId),
+    where('timestamp', '<', startOfDay.getTime()),
+    orderBy('timestamp', 'desc'),
+    limit(10)
+  );
+
+  let todayEvents: BabyEvent[] = [];
+  let lastPreMidnightSleepEvent: BabyEvent | null = null;
+
+  const unsubToday = onSnapshot(
     q,
     (snap) => {
-      const events = snap.docs.map((d) => ({ id: d.id, ...d.data() } as BabyEvent));
-      callback(events);
+      todayEvents = snap.docs.map((d) => ({ id: d.id, ...d.data() } as BabyEvent));
+      const merged = lastPreMidnightSleepEvent
+        ? [...todayEvents, lastPreMidnightSleepEvent].sort((a, b) => b.timestamp - a.timestamp)
+        : todayEvents;
+      callback(merged);
     },
     (err) => {
       console.error('Firestore subscribeToDayEvents error:', err);
       if (onError) onError(err);
     }
   );
+
+  const unsubSleep = onSnapshot(
+    sleepQ,
+    (snap) => {
+      // Find the most recent sleep or wake event before today
+      const preMidnight = snap.docs.map((d) => ({ id: d.id, ...d.data() } as BabyEvent));
+      const sleepOrWake = preMidnight.find((e) => e.type === 'sleep' || e.type === 'wake');
+      lastPreMidnightSleepEvent = sleepOrWake || null;
+      const merged = lastPreMidnightSleepEvent
+        ? [...todayEvents, lastPreMidnightSleepEvent].sort((a, b) => b.timestamp - a.timestamp)
+        : todayEvents;
+      callback(merged);
+    },
+    (err) => {
+      console.error('Firestore subscribeToDayEvents sleep error:', err);
+    }
+  );
+
+  return () => {
+    unsubToday();
+    unsubSleep();
+  };
 }

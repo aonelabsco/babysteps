@@ -205,7 +205,7 @@ export default function DashboardPage() {
       </div>
 
       {toast && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 bg-dark-700 text-gray-100 px-5 py-2.5 rounded-full text-sm font-medium shadow-lg z-50 animate-bounce border border-dark-600">
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-dark-700 text-gray-100 px-5 py-2.5 rounded-full text-sm font-medium shadow-lg z-50 animate-bounce border border-dark-600">
           {toast}
         </div>
       )}
