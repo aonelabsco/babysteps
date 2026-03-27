@@ -27,7 +27,7 @@ import {
   arrayUnion,
   arrayRemove,
 } from 'firebase/firestore';
-import type { Family, FamilyMember, Baby, BabyEvent, GrowthRecord } from './types';
+import type { Family, FamilyMember, Baby, BabySex, BabyEvent, GrowthRecord } from './types';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || 'dummy',
@@ -187,6 +187,20 @@ export async function addBaby(familyId: string, name: string): Promise<Baby> {
     id: crypto.randomUUID(),
     name,
     createdAt: Date.now(),
+  };
+  await updateDoc(doc(db, 'families', familyId), {
+    babies: arrayUnion(baby),
+  });
+  return baby;
+}
+
+export async function addBabyWithDetails(familyId: string, details: { name: string; birthday?: number; sex?: BabySex }): Promise<Baby> {
+  const baby: Baby = {
+    id: crypto.randomUUID(),
+    name: details.name,
+    createdAt: Date.now(),
+    ...(details.birthday ? { birthday: details.birthday } : {}),
+    ...(details.sex ? { sex: details.sex } : {}),
   };
   await updateDoc(doc(db, 'families', familyId), {
     babies: arrayUnion(baby),

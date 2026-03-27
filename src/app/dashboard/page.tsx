@@ -9,12 +9,63 @@ import QuickActions from '@/components/QuickActions';
 import VoiceInput from '@/components/VoiceInput';
 import EventLog from '@/components/EventLog';
 import Header from '@/components/Header';
+import Onboarding from '@/components/Onboarding';
 import { subscribeToDayEvents, addEvent, setDefaultUnit } from '@/lib/firebase';
-import { useDaySummary, useFeedAlert } from '@/lib/hooks';
+import { useDaySummary, useFeedAlert, buildEventsSummary } from '@/lib/hooks';
 import type { BabyEvent, EventType, ParsedInput, PoopSize, BreastSide, Allergen } from '@/lib/types';
 
+function NoteInput({ onSubmit, disabled }: { onSubmit: (text: string) => void; disabled?: boolean }) {
+  const [text, setText] = useState('');
+  const [open, setOpen] = useState(false);
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        className="w-full py-3 rounded-xl text-base font-medium bg-dark-800 text-gray-400 border border-dark-600 hover:bg-dark-700 transition-colors"
+      >
+        📝 leave a note for the family
+      </button>
+    );
+  }
+
+  return (
+    <div className="bg-dark-900 rounded-xl p-3 border border-dark-700 space-y-2">
+      <textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder="leave a note for the family..."
+        rows={2}
+        autoFocus
+        className="w-full py-2 px-3 rounded-lg text-base bg-dark-800 text-gray-200 placeholder-gray-600 border border-dark-600 focus:outline-none focus:ring-1 focus:ring-accent-500 resize-none"
+      />
+      <div className="flex gap-2">
+        <button
+          onClick={() => {
+            if (text.trim()) {
+              onSubmit(text.trim());
+              setText('');
+              setOpen(false);
+            }
+          }}
+          disabled={disabled || !text.trim()}
+          className="flex-1 py-2 rounded-lg text-base font-medium bg-accent-500 text-white hover:bg-accent-600 transition-colors disabled:opacity-50"
+        >
+          save note
+        </button>
+        <button
+          onClick={() => { setOpen(false); setText(''); }}
+          className="px-4 py-2 rounded-lg text-base bg-dark-800 text-gray-400 hover:bg-dark-700 transition-colors"
+        >
+          cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
-  const { user, loading, family, familyLoading } = useAuthContext();
+  const { user, loading, family, familyLoading, refreshFamily } = useAuthContext();
   const router = useRouter();
   const [selectedBabyId, setSelectedBabyId] = useState<string | null>(null);
   const [events, setEvents] = useState<BabyEvent[]>([]);
@@ -55,6 +106,8 @@ export default function DashboardPage() {
 
   const summary = useDaySummary(events);
   const feedAlert = useFeedAlert(summary.lastFeedTime);
+  const eventsSummary = buildEventsSummary(events);
+  const selectedBabyName = family?.babies?.find((b) => b.id === selectedBabyId)?.name;
 
   const showToast = useCallback((msg: string) => {
     setToast(msg);
@@ -179,6 +232,10 @@ export default function DashboardPage() {
 
   const noBabies = !family.babies || family.babies.length === 0;
 
+  if (noBabies) {
+    return <Onboarding familyId={family.id} onComplete={refreshFamily} />;
+  }
+
   return (
     <div className="min-h-screen bg-dark-950 pb-24">
       <div className="max-w-lg mx-auto px-4 pt-6 space-y-4">
@@ -203,18 +260,6 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {noBabies ? (
-          <div className="bg-dark-900 rounded-2xl p-6 border border-dark-700 text-center">
-            <p className="text-gray-400 mb-3">add your baby to get started</p>
-            <button
-              onClick={() => router.push('/settings')}
-              className="px-6 py-2 rounded-xl bg-accent-500 text-white font-medium hover:bg-accent-600"
-            >
-              go to settings
-            </button>
-          </div>
-        ) : (
-          <>
             <SummaryCard summary={summary} feedAlert={feedAlert} />
 
             {/* Family notes notification */}
@@ -259,19 +304,24 @@ export default function DashboardPage() {
               babyNames={family.babies.map((b) => b.name)}
               onParsed={handleParsed}
               disabled={saving}
+              eventsSummary={eventsSummary}
+              selectedBabyName={selectedBabyName}
             />
+
+            {/* Quick note */}
+            <NoteInput onSubmit={(text) => logEvent('note', Date.now(), { noteText: text })} disabled={saving} />
 
             <div>
               <h3 className="text-lg font-semibold text-gray-500 mb-2">recent</h3>
               <EventLog events={events} limit={5} />
             </div>
-          </>
-        )}
       </div>
 
       {toast && (
-        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-dark-700 text-gray-100 px-5 py-2.5 rounded-full text-sm font-medium shadow-lg z-50 animate-bounce border border-dark-600">
-          {toast}
+        <div className="fixed bottom-24 inset-x-0 flex justify-center z-50">
+          <div className="bg-dark-700 text-gray-100 px-5 py-2.5 rounded-full text-sm font-medium shadow-lg animate-bounce border border-dark-600">
+            {toast}
+          </div>
         </div>
       )}
 

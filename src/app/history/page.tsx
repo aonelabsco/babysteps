@@ -49,7 +49,9 @@ export default function HistoryPage() {
   const filtered = filter === 'all' ? events : events.filter((e) => e.type === filter);
   const averages = avgPeriod === 1 ? computeYesterday(events) : computeAverages(events, avgPeriod);
 
-  const filters: { key: FilterType; label: string }[] = [
+  // Only show filter tabs that have at least one event
+  const eventTypes = new Set(events.map((e) => e.type));
+  const allFilters: { key: FilterType; label: string }[] = [
     { key: 'all', label: 'all' },
     { key: 'feed', label: '🍼 formula' },
     { key: 'breast', label: '🤱 breast' },
@@ -59,6 +61,7 @@ export default function HistoryPage() {
     { key: 'sleep', label: '😴 sleep' },
     { key: 'tummytime', label: '👶 tummy' },
   ];
+  const filters = allFilters.filter((f) => f.key === 'all' || eventTypes.has(f.key as EventType));
 
   return (
     <div className="min-h-screen bg-dark-950 pb-24">

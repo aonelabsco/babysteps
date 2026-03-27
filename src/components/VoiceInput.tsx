@@ -8,13 +8,17 @@ interface VoiceInputProps {
   babyNames: string[];
   onParsed: (result: ParsedInput) => void;
   disabled?: boolean;
+  eventsSummary?: string;
+  selectedBabyName?: string;
 }
 
-export default function VoiceInput({ babyNames, onParsed, disabled }: VoiceInputProps) {
+export default function VoiceInput({ babyNames, onParsed, disabled, eventsSummary, selectedBabyName }: VoiceInputProps) {
   const [listening, setListening] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [error, setError] = useState('');
   const [manualInput, setManualInput] = useState('');
+  const [chatAnswer, setChatAnswer] = useState('');
+  const [thinking, setThinking] = useState(false);
   const recognitionRef = useRef<any>(null);
   const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -103,6 +107,9 @@ export default function VoiceInput({ babyNames, onParsed, disabled }: VoiceInput
   };
 
   const processText = async (text: string) => {
+    setChatAnswer('');
+    setError('');
+
     const localResult = parseInput(text, babyNames);
     if (localResult) {
       onParsed(localResult);
@@ -110,6 +117,7 @@ export default function VoiceInput({ babyNames, onParsed, disabled }: VoiceInput
       return;
     }
 
+    // Try LLM parsing first
     try {
       const res = await fetch('/api/parse-input', {
         method: 'POST',
@@ -125,10 +133,31 @@ export default function VoiceInput({ babyNames, onParsed, disabled }: VoiceInput
         }
       }
     } catch {
-      // LLM not available
+      // LLM not available for parsing
     }
 
-    setError(`couldn't understand: "${text}". try "fed 120 ml", "pooped big", "slept 30 min ago".`);
+    // If can't parse as a command, try answering as a question
+    setThinking(true);
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: text, eventsSummary, babyName: selectedBabyName }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.answer) {
+          setChatAnswer(data.answer);
+          setTranscript('');
+          setThinking(false);
+          return;
+        }
+      }
+    } catch {
+      // Chat not available
+    }
+    setThinking(false);
+    setError(`couldn't understand: "${text}". try "fed 120 ml", "pooped big", or ask a question.`);
   };
 
   const handleManualSubmit = (e: React.FormEvent) => {
@@ -175,6 +204,20 @@ export default function VoiceInput({ babyNames, onParsed, disabled }: VoiceInput
         <p className="text-center text-gray-400 text-base italic">
           &ldquo;{transcript}&rdquo;
         </p>
+      )}
+      {thinking && (
+        <p className="text-center text-gray-500 text-base">thinking...</p>
+      )}
+      {chatAnswer && (
+        <div className="bg-dark-900 rounded-xl p-3 border border-dark-700">
+          <p className="text-base text-gray-200">{chatAnswer}</p>
+          <button
+            onClick={() => setChatAnswer('')}
+            className="text-sm text-gray-600 mt-1 hover:text-gray-400"
+          >
+            dismiss
+          </button>
+        </div>
       )}
       {error && (
         <p className="text-center text-red-400 text-base">{error}</p>
