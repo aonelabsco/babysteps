@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthContext } from '@/components/AuthProvider';
 import BabySelector from '@/components/BabySelector';
@@ -8,12 +8,6 @@ import Header from '@/components/Header';
 import { subscribeToEvents, addEvent, updateEventTimestamp } from '@/lib/firebase';
 import type { BabyEvent, Allergen } from '@/lib/types';
 import { COMMON_ALLERGENS, COMMON_MILESTONES } from '@/lib/types';
-
-function formatTimer(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-}
 
 function getCurrentTimeString(): string {
   const now = new Date();
@@ -67,7 +61,7 @@ function TimePicker({ onSelect }: { onSelect: (timestamp: number) => void }) {
   );
 }
 
-type ActivePanel = 'solid' | 'tummy' | 'note' | null;
+type ActivePanel = 'solid' | 'tummy' | null;
 
 export default function ActivityPage() {
   const { user, loading, family, familyLoading } = useAuthContext();
@@ -81,20 +75,11 @@ export default function ActivityPage() {
   const [foodName, setFoodName] = useState('');
   const [selectedAllergens, setSelectedAllergens] = useState<Set<Allergen>>(new Set());
 
-  // Tummy time state
-  const [tummyTimerRunning, setTummyTimerRunning] = useState(false);
-  const [tummySeconds, setTummySeconds] = useState(0);
-  const tummyStartTime = useRef<number | null>(null);
-  const tummyTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
   // Milestone state
   const [showMilestoneForm, setShowMilestoneForm] = useState(false);
   const [customMilestone, setCustomMilestone] = useState('');
   const [editingMilestoneId, setEditingMilestoneId] = useState<string | null>(null);
   const [editMilestoneDate, setEditMilestoneDate] = useState('');
-
-  // Note state
-  const [noteText, setNoteText] = useState('');
 
   useEffect(() => {
     if (!loading && !user) router.replace('/');
@@ -115,26 +100,15 @@ export default function ActivityPage() {
     return unsub;
   }, [family?.id, selectedBabyId]);
 
-  // Tummy timer
-  useEffect(() => {
-    if (tummyTimerRunning) {
-      tummyTimerRef.current = setInterval(() => setTummySeconds((s) => s + 1), 1000);
-    } else if (tummyTimerRef.current) {
-      clearInterval(tummyTimerRef.current);
-      tummyTimerRef.current = null;
-    }
-    return () => { if (tummyTimerRef.current) clearInterval(tummyTimerRef.current); };
-  }, [tummyTimerRunning]);
-
   const showToast = useCallback((msg: string) => {
     setToast(msg);
     setTimeout(() => setToast(''), 2000);
   }, []);
 
   const logEvent = useCallback(async (
-    type: 'solid' | 'tummytime' | 'milestone' | 'note',
+    type: 'solid' | 'tummytime' | 'milestone',
     timestamp: number,
-    extra?: { foodName?: string; allergens?: Allergen[]; tummyDuration?: number; milestoneName?: string; noteText?: string }
+    extra?: { foodName?: string; allergens?: Allergen[]; milestoneName?: string }
   ) => {
     if (!family || !user || !selectedBabyId) return;
     const babyName = family.babies.find((b) => b.id === selectedBabyId)?.name || '';
@@ -152,17 +126,11 @@ export default function ActivityPage() {
         eventData.foodName = extra?.foodName;
         if (extra?.allergens && extra.allergens.length > 0) eventData.allergens = extra.allergens;
       }
-      if (type === 'tummytime' && extra?.tummyDuration) {
-        eventData.tummyDuration = extra.tummyDuration;
-      }
       if (type === 'milestone') {
         eventData.milestoneName = extra?.milestoneName;
       }
-      if (type === 'note') {
-        eventData.noteText = extra?.noteText;
-      }
       await addEvent(eventData as Parameters<typeof addEvent>[0]);
-      const labels = { solid: 'solid food logged', tummytime: 'tummy time logged', milestone: 'milestone logged', note: 'note saved' };
+      const labels = { solid: 'solid food logged', tummytime: 'tummy time logged', milestone: 'milestone logged' };
       showToast(labels[type]);
     } catch (err) {
       console.error('Failed to save event:', err);
@@ -185,12 +153,6 @@ export default function ActivityPage() {
       setActivePanel(panel);
       setFoodName('');
       setSelectedAllergens(new Set());
-      setNoteText('');
-      if (panel !== 'tummy') {
-        setTummyTimerRunning(false);
-        setTummySeconds(0);
-        tummyStartTime.current = null;
-      }
     }
   };
 
@@ -270,16 +232,6 @@ export default function ActivityPage() {
           >
             👶 tummy time
           </button>
-          <button
-            onClick={() => togglePanel('note')}
-            className={`flex-1 py-4 rounded-xl text-lg font-semibold transition-all ${
-              activePanel === 'note'
-                ? 'bg-accent-500 text-white'
-                : 'bg-dark-800 text-gray-300 border border-dark-600 hover:bg-dark-700'
-            }`}
-          >
-            📝 note
-          </button>
         </div>
 
         {/* Solid food panel */}
@@ -330,82 +282,13 @@ export default function ActivityPage() {
           </div>
         )}
 
-        {/* Tummy time panel */}
+        {/* Tummy time — simple time picker, no timer */}
         {activePanel === 'tummy' && (
-          <div className="bg-dark-900 rounded-xl p-3 border border-dark-700 space-y-3">
-            <div className="text-center space-y-2">
-              <p className="text-3xl font-bold text-gray-100 font-mono tracking-wider">
-                {formatTimer(tummySeconds)}
-              </p>
-              {!tummyTimerRunning ? (
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => { tummyStartTime.current = Date.now(); setTummySeconds(0); setTummyTimerRunning(true); }}
-                    className="flex-1 py-2.5 rounded-lg text-base font-medium bg-accent-500 text-white hover:bg-accent-600 transition-colors"
-                  >
-                    start timer
-                  </button>
-                  <button
-                    onClick={() => {
-                      logEvent('tummytime', Date.now());
-                      setActivePanel(null);
-                    }}
-                    className="flex-1 py-2.5 rounded-lg text-base font-medium bg-dark-800 text-gray-400 hover:bg-dark-700 transition-colors"
-                  >
-                    log without timer
-                  </button>
-                </div>
-              ) : (
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => {
-                      const duration = Math.max(1, Math.round(tummySeconds / 60));
-                      const startTs = tummyStartTime.current || (Date.now() - tummySeconds * 1000);
-                      logEvent('tummytime', startTs, { tummyDuration: duration });
-                      setTummyTimerRunning(false);
-                      setTummySeconds(0);
-                      tummyStartTime.current = null;
-                      setActivePanel(null);
-                    }}
-                    className="flex-1 py-3 rounded-lg text-base font-semibold bg-green-600 text-white hover:bg-green-700 transition-colors"
-                  >
-                    done — log tummy time
-                  </button>
-                  <button
-                    onClick={() => { setTummyTimerRunning(false); setTummySeconds(0); tummyStartTime.current = null; }}
-                    className="px-4 py-3 rounded-lg text-base font-medium bg-dark-800 text-gray-400 hover:bg-dark-700 transition-colors"
-                  >
-                    cancel
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Note panel */}
-        {activePanel === 'note' && (
-          <div className="bg-dark-900 rounded-xl p-3 border border-dark-700 space-y-3">
-            <textarea
-              value={noteText}
-              onChange={(e) => setNoteText(e.target.value)}
-              placeholder="leave a note for the family..."
-              rows={3}
-              className="w-full py-2.5 px-3 rounded-lg text-base bg-dark-800 text-gray-200 placeholder-gray-600 border border-dark-600 focus:outline-none focus:ring-1 focus:ring-accent-500 resize-none"
-            />
-            <button
-              onClick={() => {
-                if (noteText.trim()) {
-                  logEvent('note', Date.now(), { noteText: noteText.trim() });
-                  setNoteText('');
-                  setActivePanel(null);
-                }
-              }}
-              disabled={!noteText.trim()}
-              className="w-full py-2.5 rounded-lg text-base font-medium bg-accent-500 text-white hover:bg-accent-600 transition-colors disabled:opacity-50"
-            >
-              save note
-            </button>
+          <div className="bg-dark-900 rounded-xl p-3 border border-dark-700">
+            <TimePicker onSelect={(ts) => {
+              logEvent('tummytime', ts);
+              setActivePanel(null);
+            }} />
           </div>
         )}
 
@@ -545,8 +428,10 @@ export default function ActivityPage() {
       </div>
 
       {toast && (
-        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-dark-700 text-gray-100 px-5 py-2.5 rounded-full text-sm font-medium shadow-lg z-50 animate-bounce border border-dark-600">
-          {toast}
+        <div className="fixed bottom-24 inset-x-0 flex justify-center z-50">
+          <div className="bg-dark-700 text-gray-100 px-5 py-2.5 rounded-full text-sm font-medium shadow-lg animate-bounce border border-dark-600">
+            {toast}
+          </div>
         </div>
       )}
 

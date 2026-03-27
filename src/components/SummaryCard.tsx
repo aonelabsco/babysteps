@@ -61,12 +61,12 @@ export default function SummaryCard({ summary, feedAlert }: SummaryCardProps) {
           label="last feed"
           value={
             summary.lastFeedTime
-              ? `${formatTime(summary.lastFeedTime)} — ${timeSince(summary.lastFeedTime)}`
+              ? timeSince(summary.lastFeedTime)
               : 'no feeds today'
           }
           subtitle={
             summary.lastFeedQuantity
-              ? `${summary.lastFeedQuantity} ${summary.lastFeedUnit}`
+              ? `${summary.lastFeedQuantity} ${summary.lastFeedUnit} at ${formatTime(summary.lastFeedTime)}`
               : summary.breastfeedCount > 0
               ? `${summary.breastfeedCount} breastfeed${summary.breastfeedCount > 1 ? 's' : ''}`
               : null
