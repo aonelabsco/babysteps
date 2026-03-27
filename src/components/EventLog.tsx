@@ -33,6 +33,11 @@ function eventDescription(event: BabyEvent): string {
   switch (event.type) {
     case 'feed':
       return `fed ${event.quantity || '?'} ${event.unit || 'ml'}`;
+    case 'breast': {
+      const side = event.breastSide || 'both';
+      const dur = event.breastDuration ? ` · ${event.breastDuration}m` : '';
+      return `breastfed (${side}${dur})`;
+    }
     case 'poop':
       return `poop (${event.size || 'medium'})`;
     case 'pee':
@@ -47,6 +52,7 @@ function eventDescription(event: BabyEvent): string {
 function eventIcon(type: string): string {
   switch (type) {
     case 'feed': return '🍼';
+    case 'breast': return '🤱';
     case 'poop': return '💩';
     case 'pee': return '💧';
     case 'sleep': return '😴';

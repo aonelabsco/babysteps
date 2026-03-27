@@ -11,7 +11,7 @@ import EventLog from '@/components/EventLog';
 import Header from '@/components/Header';
 import { subscribeToDayEvents, addEvent, setDefaultUnit } from '@/lib/firebase';
 import { useDaySummary, useFeedAlert } from '@/lib/hooks';
-import type { BabyEvent, EventType, ParsedInput, PoopSize } from '@/lib/types';
+import type { BabyEvent, EventType, ParsedInput, PoopSize, BreastSide } from '@/lib/types';
 
 export default function DashboardPage() {
   const { user, loading, family, familyLoading } = useAuthContext();
@@ -64,7 +64,7 @@ export default function DashboardPage() {
   const logEvent = useCallback(async (
     type: EventType,
     timestamp: number,
-    extra?: { quantity?: number; unit?: 'ml' | 'oz'; size?: PoopSize }
+    extra?: { quantity?: number; unit?: 'ml' | 'oz'; size?: PoopSize; breastSide?: BreastSide; breastDuration?: number }
   ) => {
     if (!family || !user || !selectedBabyId) return;
 
@@ -87,6 +87,7 @@ export default function DashboardPage() {
       createdByName: user.displayName || 'Parent',
       ...(type === 'feed' && { quantity: extra?.quantity, unit }),
       ...(type === 'poop' && { size: extra?.size }),
+      ...(type === 'breast' && { breastSide: extra?.breastSide, breastDuration: extra?.breastDuration }),
     };
 
     // Optimistic update — add to local state immediately
@@ -94,6 +95,7 @@ export default function DashboardPage() {
 
     const labels: Record<EventType, string> = {
       feed: 'feed logged',
+      breast: 'breastfeed logged',
       poop: 'poop logged',
       pee: 'pee logged',
       sleep: 'sleep logged',
@@ -113,6 +115,7 @@ export default function DashboardPage() {
         createdByName: user.displayName || 'Parent',
         ...(type === 'feed' && { quantity: extra?.quantity, unit }),
         ...(type === 'poop' && { size: extra?.size }),
+        ...(type === 'breast' && { breastSide: extra?.breastSide, breastDuration: extra?.breastDuration }),
       });
     } catch {
       showToast('failed to save. try again.');
@@ -144,6 +147,8 @@ export default function DashboardPage() {
       quantity: parsed.quantity,
       unit: parsed.unit,
       size: parsed.size,
+      breastSide: parsed.breastSide,
+      breastDuration: parsed.breastDuration,
     });
   }, [family, user, selectedBabyId, logEvent, showToast]);
 
@@ -185,6 +190,7 @@ export default function DashboardPage() {
 
             <QuickActions
               defaultUnit={family.defaultUnit}
+              feedingMode={family.feedingMode || 'formula'}
               lastSleepEvent={summary.lastSleepEvent}
               onLog={logEvent}
               disabled={saving}

@@ -18,7 +18,7 @@ export default function HistoryPage() {
   const [selectedBabyId, setSelectedBabyId] = useState<string | null>(null);
   const [events, setEvents] = useState<BabyEvent[]>([]);
   const [filter, setFilter] = useState<FilterType>('all');
-  const [avgPeriod, setAvgPeriod] = useState<1 | 7 | 30>(7);
+  const [avgPeriod, setAvgPeriod] = useState<1 | 7 | 30>(1);
 
   useEffect(() => {
     if (!loading && !user) router.replace('/');
@@ -50,7 +50,8 @@ export default function HistoryPage() {
 
   const filters: { key: FilterType; label: string }[] = [
     { key: 'all', label: 'all' },
-    { key: 'feed', label: '🍼 feeds' },
+    { key: 'feed', label: '🍼 formula' },
+    { key: 'breast', label: '🤱 breast' },
     { key: 'poop', label: '💩 poops' },
     { key: 'pee', label: '💧 pee' },
     { key: 'sleep', label: '😴 sleep' },

@@ -33,6 +33,11 @@ export function useDaySummary(events: BabyEvent[]): DaySummary {
   const totalMilk = feeds.reduce((sum, e) => sum + (e.quantity || 0), 0);
   const milkUnit = lastFeed?.unit || feeds.find((f) => f.unit)?.unit || 'ml';
 
+  // Breastfeeding summary
+  const breastfeeds = todayEvents.filter((e) => e.type === 'breast');
+  const lastBreastfeed = breastfeeds.length > 0 ? breastfeeds[0] : null;
+  const totalBreastMinutes = breastfeeds.reduce((sum, e) => sum + (e.breastDuration || 0), 0);
+
   // For sleep status, look at ALL events (including pre-midnight) to find the last sleep/wake
   // Events array may contain a pre-midnight sleep event for cross-midnight tracking
   const allSleepWakeEvents = events.filter((e) => e.type === 'sleep' || e.type === 'wake');
@@ -68,12 +73,19 @@ export function useDaySummary(events: BabyEvent[]): DaySummary {
     }
   }
 
+  // Last feed time considers both formula and breast
+  const allFeeds = todayEvents.filter((e) => e.type === 'feed' || e.type === 'breast');
+  const lastAnyFeed = allFeeds.length > 0 ? allFeeds[0] : null;
+
   return {
-    lastFeedTime: lastFeed?.timestamp || null,
+    lastFeedTime: lastAnyFeed?.timestamp || null,
     lastFeedQuantity: lastFeed?.quantity || null,
     lastFeedUnit: lastFeed?.unit || null,
     totalMilk,
     milkUnit,
+    breastfeedCount: breastfeeds.length,
+    lastBreastfeedTime: lastBreastfeed?.timestamp || null,
+    totalBreastMinutes,
     poopCount: todayEvents.filter((e) => e.type === 'poop').length,
     peeCount: todayEvents.filter((e) => e.type === 'pee').length,
     lastSleepEvent,

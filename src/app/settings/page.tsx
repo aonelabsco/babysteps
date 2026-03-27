@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuthContext } from '@/components/AuthProvider';
 import Header from '@/components/Header';
 import { addBaby, removeBaby, updateBaby, updateFamilyUnits, signOut } from '@/lib/firebase';
-import type { Baby, BabySex, VolumeUnit, WeightUnit, LengthUnit } from '@/lib/types';
+import type { Baby, BabySex, VolumeUnit, WeightUnit, LengthUnit, FeedingMode } from '@/lib/types';
 
 function formatBirthday(ts: number): string {
   return new Date(ts).toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
@@ -258,6 +258,24 @@ export default function SettingsPage() {
               add
             </button>
           </form>
+        </div>
+
+        {/* Feeding mode */}
+        <div className="bg-dark-900 rounded-2xl p-5 border border-dark-700 space-y-4">
+          <h2 className="text-base font-semibold text-gray-500">feeding</h2>
+          <UnitPicker<FeedingMode>
+            label="feeding mode"
+            value={family.feedingMode || 'formula'}
+            options={[['formula', '🍼 formula'], ['breast', '🤱 breast'], ['both', 'both']] as const}
+            onChange={(v) => updateFamilyUnits(family.id, { feedingMode: v })}
+          />
+          <p className="text-sm text-gray-600">
+            {family.feedingMode === 'breast'
+              ? 'quick actions will show breastfeeding with side & timer'
+              : family.feedingMode === 'both'
+              ? 'quick actions will show both formula and breastfeeding options'
+              : 'quick actions will show formula with amount presets'}
+          </p>
         </div>
 
         {/* Units */}

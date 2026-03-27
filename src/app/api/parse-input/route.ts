@@ -35,11 +35,15 @@ ${babyNamesStr}
 Parse this input: "${text}"
 
 Respond with ONLY a JSON object (no markdown, no explanation) with these fields:
-- type: "feed" | "poop" | "pee"
+- type: "feed" | "breast" | "poop" | "pee" | "sleep" | "wake"
 - quantity: number (only for feed, in ml or oz)
 - unit: "ml" | "oz" (only for feed)
 - size: "big" | "medium" | "small" (only for poop)
+- breastSide: "left" | "right" | "both" (only for breast)
+- breastDuration: number in minutes (only for breast, if mentioned)
 - babyName: string (only if a specific baby is mentioned)
+
+Use type "breast" for breastfeeding/nursing. Use type "feed" for formula/bottle feeds.
 
 If you cannot parse the input, respond with: {"error": "cannot parse"}`,
         },

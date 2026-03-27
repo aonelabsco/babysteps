@@ -61,13 +61,25 @@ export default function SummaryCard({ summary, feedAlert }: SummaryCardProps) {
           label="last feed"
           value={
             summary.lastFeedTime
-              ? `${formatTime(summary.lastFeedTime)} — ${summary.lastFeedQuantity}${summary.lastFeedUnit}`
+              ? `${formatTime(summary.lastFeedTime)} — ${timeSince(summary.lastFeedTime)}`
               : 'no feeds today'
+          }
+          subtitle={
+            summary.lastFeedQuantity
+              ? `${summary.lastFeedQuantity} ${summary.lastFeedUnit}`
+              : summary.breastfeedCount > 0
+              ? `${summary.breastfeedCount} breastfeed${summary.breastfeedCount > 1 ? 's' : ''}`
+              : null
           }
         />
         <StatBox
           label="total milk today"
           value={summary.totalMilk > 0 ? `${summary.totalMilk} ${summary.milkUnit}` : '--'}
+          subtitle={
+            summary.totalBreastMinutes > 0
+              ? `+ ${summary.totalBreastMinutes}m nursing`
+              : null
+          }
         />
         <StatBox label="poops today" value={String(summary.poopCount)} />
         <StatBox label="pee today" value={String(summary.peeCount)} />
