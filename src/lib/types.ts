@@ -30,6 +30,7 @@ export interface FamilyMember {
 export type VolumeUnit = 'ml' | 'oz';
 export type WeightUnit = 'kg' | 'lbs';
 export type LengthUnit = 'cm' | 'in';
+export type FeedingMode = 'formula' | 'breast' | 'both';
 
 export interface Family {
   id: string;
@@ -38,14 +39,16 @@ export interface Family {
   defaultUnit: VolumeUnit | null;
   weightUnit?: WeightUnit;
   lengthUnit?: LengthUnit;
+  feedingMode?: FeedingMode;
   createdBy: string;
   createdAt: number;
   babies: Baby[];
   members: FamilyMember[];
 }
 
-export type EventType = 'feed' | 'poop' | 'pee' | 'sleep' | 'wake';
+export type EventType = 'feed' | 'breast' | 'poop' | 'pee' | 'sleep' | 'wake';
 export type PoopSize = 'big' | 'medium' | 'small';
+export type BreastSide = 'left' | 'right' | 'both';
 
 export interface BabyEvent {
   id: string;
@@ -56,11 +59,14 @@ export interface BabyEvent {
   timestamp: number;
   createdBy: string;
   createdByName: string;
-  // feed
+  // feed (formula)
   quantity?: number;
   unit?: 'ml' | 'oz';
   // poop
   size?: PoopSize;
+  // breast
+  breastSide?: BreastSide;
+  breastDuration?: number; // minutes
 }
 
 export interface DaySummary {
@@ -69,6 +75,9 @@ export interface DaySummary {
   lastFeedUnit: string | null;
   totalMilk: number;
   milkUnit: string;
+  breastfeedCount: number;
+  lastBreastfeedTime: number | null;
+  totalBreastMinutes: number;
   poopCount: number;
   peeCount: number;
   lastSleepEvent: BabyEvent | null;
@@ -82,6 +91,8 @@ export interface ParsedInput {
   quantity?: number;
   unit?: 'ml' | 'oz';
   size?: PoopSize;
+  breastSide?: BreastSide;
+  breastDuration?: number;
   babyName?: string;
   timestamp?: number;
 }

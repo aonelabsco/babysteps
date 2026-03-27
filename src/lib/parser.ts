@@ -1,4 +1,4 @@
-import type { ParsedInput, PoopSize } from './types';
+import type { ParsedInput, PoopSize, BreastSide } from './types';
 
 /**
  * Extract time from text, returning the timestamp and text with time removed.
@@ -76,11 +76,24 @@ export function parseInput(text: string, babyNames: string[] = []): ParsedInput 
     return { type: 'wake', babyName, timestamp };
   }
 
-  // --- FEED patterns (use remaining text so time numbers are stripped) ---
+  // --- BREASTFEED patterns (check before formula feed) ---
+  if (/\b(?:breastfe(?:d|ed|eding)|nurs(?:ed|ing)|breast\s*fed|breast\s*feed|latched)\b/i.test(remaining)) {
+    let breastSide: BreastSide = 'both';
+    if (/\bleft\b/i.test(remaining)) breastSide = 'left';
+    else if (/\bright\b/i.test(remaining)) breastSide = 'right';
+
+    let breastDuration: number | undefined;
+    const durMatch = remaining.match(/(\d+)\s*(?:min(?:ute)?s?|m)\b/i);
+    if (durMatch) breastDuration = parseInt(durMatch[1]);
+
+    return { type: 'breast', breastSide, breastDuration, babyName, timestamp };
+  }
+
+  // --- FEED patterns (formula — use remaining text so time numbers are stripped) ---
   const feedPatterns = [
-    /(?:fed|feed|gave|bottle|breastfed|drank|had|ate|drink|nursing|nursed)\s+(\d+(?:\.\d+)?)\s*(ml|oz|ounce|ounces|milliliters?)?/i,
-    /(\d+(?:\.\d+)?)\s*(ml|oz|ounce|ounces|milliliters?)\s*(?:feed|fed|bottle|milk|formula|breast\s*milk)?/i,
-    /(?:fed|feed|gave|bottle|breastfed|drank|had|ate)\s+(?:\w+\s+)?(\d+(?:\.\d+)?)\s*(ml|oz|ounce|ounces|milliliters?)?/i,
+    /(?:fed|feed|gave|bottle|drank|had|ate|drink)\s+(\d+(?:\.\d+)?)\s*(ml|oz|ounce|ounces|milliliters?)?/i,
+    /(\d+(?:\.\d+)?)\s*(ml|oz|ounce|ounces|milliliters?)\s*(?:feed|fed|bottle|milk|formula)?/i,
+    /(?:fed|feed|gave|bottle|drank|had|ate)\s+(?:\w+\s+)?(\d+(?:\.\d+)?)\s*(ml|oz|ounce|ounces|milliliters?)?/i,
   ];
 
   for (const pattern of feedPatterns) {
@@ -96,8 +109,8 @@ export function parseInput(text: string, babyNames: string[] = []): ParsedInput 
     }
   }
 
-  // "fed" / "feed" without quantity
-  if (/\b(?:fed|feed|bottle|breastfed|nursing|nursed)\b/i.test(remaining)) {
+  // "fed" / "feed" without quantity (formula)
+  if (/\b(?:fed|feed|bottle|formula)\b/i.test(remaining)) {
     return { type: 'feed', babyName, timestamp };
   }
 
