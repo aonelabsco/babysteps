@@ -1,26 +1,33 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import type { EventType, PoopSize, BabyEvent, BreastSide, FeedingMode } from '@/lib/types';
+import type { EventType, PoopSize, BabyEvent, BreastSide, FeedingMode, MealType, Allergen } from '@/lib/types';
+import { COMMON_ALLERGENS } from '@/lib/types';
+
+interface EventExtra {
+  quantity?: number;
+  unit?: 'ml' | 'oz';
+  size?: PoopSize;
+  breastSide?: BreastSide;
+  breastDuration?: number;
+  foodName?: string;
+  mealType?: MealType;
+  allergens?: Allergen[];
+  tummyDuration?: number;
+}
 
 interface QuickActionsProps {
   defaultUnit: 'ml' | 'oz' | null;
   feedingMode: FeedingMode;
   lastSleepEvent: BabyEvent | null;
-  onLog: (type: EventType, timestamp: number, extra?: {
-    quantity?: number;
-    unit?: 'ml' | 'oz';
-    size?: PoopSize;
-    breastSide?: BreastSide;
-    breastDuration?: number;
-  }) => void;
+  onLog: (type: EventType, timestamp: number, extra?: EventExtra) => void;
   disabled?: boolean;
 }
 
 const ML_PRESETS = [60, 90, 120, 150];
 const OZ_PRESETS = [2, 3, 4, 5];
 
-type ExpandedAction = 'feed' | 'breast' | 'poop' | 'pee' | 'sleep' | null;
+type ExpandedAction = 'feed' | 'breast' | 'poop' | 'pee' | 'sleep' | 'solid' | 'tummy' | null;
 
 function getCurrentTimeString(): string {
   const now = new Date();
@@ -93,6 +100,17 @@ export default function QuickActions({ defaultUnit, feedingMode, lastSleepEvent,
   const breastStartTime = useRef<number | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Solid food state
+  const [foodName, setFoodName] = useState('');
+  const [mealType, setMealType] = useState<MealType>('snack');
+  const [selectedAllergens, setSelectedAllergens] = useState<Set<Allergen>>(new Set());
+
+  // Tummy time state
+  const [tummyTimerRunning, setTummyTimerRunning] = useState(false);
+  const [tummySeconds, setTummySeconds] = useState(0);
+  const tummyStartTime = useRef<number | null>(null);
+  const tummyTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   const unit = defaultUnit || 'ml';
   const presets = unit === 'oz' ? OZ_PRESETS : ML_PRESETS;
   const isSleeping = lastSleepEvent?.type === 'sleep';
@@ -102,57 +120,63 @@ export default function QuickActions({ defaultUnit, feedingMode, lastSleepEvent,
   const showFormula = feedingMode === 'formula' || feedingMode === 'both';
   const showBreast = feedingMode === 'breast' || feedingMode === 'both';
 
-  // Timer effect
+  // Timer effects
   useEffect(() => {
     if (breastTimerRunning) {
-      timerRef.current = setInterval(() => {
-        setBreastSeconds((s) => s + 1);
-      }, 1000);
+      timerRef.current = setInterval(() => setBreastSeconds((s) => s + 1), 1000);
     } else if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [breastTimerRunning]);
+
+  useEffect(() => {
+    if (tummyTimerRunning) {
+      tummyTimerRef.current = setInterval(() => setTummySeconds((s) => s + 1), 1000);
+    } else if (tummyTimerRef.current) {
+      clearInterval(tummyTimerRef.current);
+      tummyTimerRef.current = null;
+    }
+    return () => { if (tummyTimerRef.current) clearInterval(tummyTimerRef.current); };
+  }, [tummyTimerRunning]);
+
+  const resetTimers = (except?: 'breast' | 'tummy') => {
+    if (except !== 'breast') {
+      setBreastTimerRunning(false);
+      setBreastSeconds(0);
+      breastStartTime.current = null;
+    }
+    if (except !== 'tummy') {
+      setTummyTimerRunning(false);
+      setTummySeconds(0);
+      tummyStartTime.current = null;
+    }
+  };
 
   const toggle = (action: ExpandedAction) => {
     if (expanded === action) {
       setExpanded(null);
-      // Stop timer if closing breast panel
-      if (action === 'breast') {
-        setBreastTimerRunning(false);
-        setBreastSeconds(0);
-        breastStartTime.current = null;
-      }
+      resetTimers();
     } else {
       setExpanded(action);
       setSelectedSize('medium');
       setSelectedAmount(null);
       setCustomAmount('');
-      if (action !== 'breast') {
-        setBreastTimerRunning(false);
-        setBreastSeconds(0);
-        breastStartTime.current = null;
-      }
+      setFoodName('');
+      setSelectedAllergens(new Set());
+      resetTimers(action === 'breast' ? 'breast' : action === 'tummy' ? 'tummy' : undefined);
     }
   };
 
-  const logWithTimestamp = (type: EventType, timestamp: number, extra?: {
-    quantity?: number;
-    unit?: 'ml' | 'oz';
-    size?: PoopSize;
-    breastSide?: BreastSide;
-    breastDuration?: number;
-  }) => {
+  const logWithTimestamp = (type: EventType, timestamp: number, extra?: EventExtra) => {
     onLog(type, timestamp, extra);
     setExpanded(null);
     setSelectedAmount(null);
     setCustomAmount('');
-    setBreastTimerRunning(false);
-    setBreastSeconds(0);
-    breastStartTime.current = null;
+    setFoodName('');
+    setSelectedAllergens(new Set());
+    resetTimers();
   };
 
   const startBreastTimer = () => {
@@ -397,6 +421,140 @@ export default function QuickActions({ defaultUnit, feedingMode, lastSleepEvent,
       {expanded === 'sleep' && (
         <div className="bg-dark-900 rounded-xl p-3 border border-dark-700">
           <TimePicker onSelect={(ts) => logWithTimestamp(sleepType, ts)} />
+        </div>
+      )}
+
+      {/* Third row: Solids | Tummy time */}
+      <div className="flex gap-2">
+        <button
+          onClick={() => toggle('solid')}
+          disabled={disabled}
+          className={`flex-1 py-4 rounded-xl text-lg font-semibold transition-all disabled:opacity-50 ${
+            expanded === 'solid'
+              ? 'bg-accent-500 text-white'
+              : 'bg-dark-800 text-gray-300 border border-dark-600 hover:bg-dark-700'
+          }`}
+        >
+          🥑 solids
+        </button>
+        <button
+          onClick={() => toggle('tummy')}
+          disabled={disabled}
+          className={`flex-1 py-4 rounded-xl text-lg font-semibold transition-all disabled:opacity-50 ${
+            expanded === 'tummy'
+              ? 'bg-accent-500 text-white'
+              : 'bg-dark-800 text-gray-300 border border-dark-600 hover:bg-dark-700'
+          }`}
+        >
+          👶 tummy time
+        </button>
+      </div>
+
+      {/* Solid food expanded panel */}
+      {expanded === 'solid' && (
+        <div className="bg-dark-900 rounded-xl p-3 border border-dark-700 space-y-3">
+          <input
+            type="text"
+            value={foodName}
+            onChange={(e) => setFoodName(e.target.value)}
+            placeholder="what did baby eat?"
+            className="w-full py-2.5 px-3 rounded-lg text-base bg-dark-800 text-gray-200 placeholder-gray-600 border border-dark-600 focus:outline-none focus:ring-1 focus:ring-accent-500"
+          />
+          <div className="flex gap-2">
+            {(['breakfast', 'lunch', 'dinner', 'snack'] as MealType[]).map((m) => (
+              <button
+                key={m}
+                onClick={() => setMealType(m)}
+                className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  mealType === m
+                    ? 'bg-accent-500 text-white'
+                    : 'bg-dark-800 text-gray-400 hover:bg-dark-700'
+                }`}
+              >
+                {m}
+              </button>
+            ))}
+          </div>
+          {/* Allergen tags */}
+          <div>
+            <p className="text-sm text-gray-500 mb-1.5">allergens (tap to tag)</p>
+            <div className="flex flex-wrap gap-1.5">
+              {COMMON_ALLERGENS.map((a) => (
+                <button
+                  key={a}
+                  onClick={() => {
+                    const next = new Set(selectedAllergens);
+                    if (next.has(a)) next.delete(a); else next.add(a);
+                    setSelectedAllergens(next);
+                  }}
+                  className={`px-2.5 py-1 rounded-full text-sm font-medium transition-colors ${
+                    selectedAllergens.has(a)
+                      ? 'bg-orange-500/80 text-white'
+                      : 'bg-dark-800 text-gray-500 hover:bg-dark-700'
+                  }`}
+                >
+                  {a}
+                </button>
+              ))}
+            </div>
+          </div>
+          {foodName.trim() ? (
+            <TimePicker onSelect={(ts) => {
+              logWithTimestamp('solid', ts, {
+                foodName: foodName.trim(),
+                mealType,
+                allergens: selectedAllergens.size > 0 ? [...selectedAllergens] : undefined,
+              });
+            }} />
+          ) : (
+            <p className="text-base text-gray-600 text-center">type what baby ate, then choose when</p>
+          )}
+        </div>
+      )}
+
+      {/* Tummy time expanded panel */}
+      {expanded === 'tummy' && (
+        <div className="bg-dark-900 rounded-xl p-3 border border-dark-700 space-y-3">
+          <div className="text-center space-y-2">
+            <p className="text-3xl font-bold text-gray-100 font-mono tracking-wider">
+              {formatTimer(tummySeconds)}
+            </p>
+            {!tummyTimerRunning ? (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => { tummyStartTime.current = Date.now(); setTummySeconds(0); setTummyTimerRunning(true); }}
+                  className="flex-1 py-2.5 rounded-lg text-base font-medium bg-accent-500 text-white hover:bg-accent-600 transition-colors"
+                >
+                  start timer
+                </button>
+                <button
+                  onClick={() => logWithTimestamp('tummytime', Date.now())}
+                  className="flex-1 py-2.5 rounded-lg text-base font-medium bg-dark-800 text-gray-400 hover:bg-dark-700 transition-colors"
+                >
+                  log without timer
+                </button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    const duration = Math.max(1, Math.round(tummySeconds / 60));
+                    const startTs = tummyStartTime.current || (Date.now() - tummySeconds * 1000);
+                    logWithTimestamp('tummytime', startTs, { tummyDuration: duration });
+                  }}
+                  className="flex-1 py-3 rounded-lg text-base font-semibold bg-green-600 text-white hover:bg-green-700 transition-colors"
+                >
+                  done — log tummy time
+                </button>
+                <button
+                  onClick={() => { setTummyTimerRunning(false); setTummySeconds(0); tummyStartTime.current = null; }}
+                  className="px-4 py-3 rounded-lg text-base font-medium bg-dark-800 text-gray-400 hover:bg-dark-700 transition-colors"
+                >
+                  cancel
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

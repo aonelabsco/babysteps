@@ -11,7 +11,7 @@ import EventLog from '@/components/EventLog';
 import Header from '@/components/Header';
 import { subscribeToDayEvents, addEvent, setDefaultUnit } from '@/lib/firebase';
 import { useDaySummary, useFeedAlert } from '@/lib/hooks';
-import type { BabyEvent, EventType, ParsedInput, PoopSize, BreastSide } from '@/lib/types';
+import type { BabyEvent, EventType, ParsedInput, PoopSize, BreastSide, MealType, Allergen } from '@/lib/types';
 
 export default function DashboardPage() {
   const { user, loading, family, familyLoading } = useAuthContext();
@@ -64,7 +64,7 @@ export default function DashboardPage() {
   const logEvent = useCallback(async (
     type: EventType,
     timestamp: number,
-    extra?: { quantity?: number; unit?: 'ml' | 'oz'; size?: PoopSize; breastSide?: BreastSide; breastDuration?: number }
+    extra?: { quantity?: number; unit?: 'ml' | 'oz'; size?: PoopSize; breastSide?: BreastSide; breastDuration?: number; foodName?: string; mealType?: MealType; allergens?: Allergen[]; tummyDuration?: number; milestoneName?: string }
   ) => {
     if (!family || !user || !selectedBabyId) return;
 
@@ -88,6 +88,9 @@ export default function DashboardPage() {
       ...(type === 'feed' && { quantity: extra?.quantity, unit }),
       ...(type === 'poop' && { size: extra?.size }),
       ...(type === 'breast' && { breastSide: extra?.breastSide, breastDuration: extra?.breastDuration }),
+      ...(type === 'solid' && { foodName: extra?.foodName, mealType: extra?.mealType, allergens: extra?.allergens }),
+      ...(type === 'tummytime' && { tummyDuration: extra?.tummyDuration }),
+      ...(type === 'milestone' && { milestoneName: extra?.milestoneName }),
     };
 
     // Optimistic update — add to local state immediately
@@ -100,6 +103,9 @@ export default function DashboardPage() {
       pee: 'pee logged',
       sleep: 'sleep logged',
       wake: 'wake logged',
+      solid: 'solid food logged',
+      tummytime: 'tummy time logged',
+      milestone: 'milestone logged',
     };
     showToast(labels[type]);
 
@@ -116,6 +122,9 @@ export default function DashboardPage() {
         ...(type === 'feed' && { quantity: extra?.quantity, unit }),
         ...(type === 'poop' && { size: extra?.size }),
         ...(type === 'breast' && { breastSide: extra?.breastSide, breastDuration: extra?.breastDuration }),
+        ...(type === 'solid' && { foodName: extra?.foodName, mealType: extra?.mealType, allergens: extra?.allergens }),
+        ...(type === 'tummytime' && { tummyDuration: extra?.tummyDuration }),
+        ...(type === 'milestone' && { milestoneName: extra?.milestoneName }),
       });
     } catch {
       showToast('failed to save. try again.');
@@ -149,6 +158,11 @@ export default function DashboardPage() {
       size: parsed.size,
       breastSide: parsed.breastSide,
       breastDuration: parsed.breastDuration,
+      foodName: parsed.foodName,
+      mealType: parsed.mealType,
+      allergens: parsed.allergens,
+      tummyDuration: parsed.tummyDuration,
+      milestoneName: parsed.milestoneName,
     });
   }, [family, user, selectedBabyId, logEvent, showToast]);
 

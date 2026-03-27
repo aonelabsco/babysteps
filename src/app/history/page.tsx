@@ -52,9 +52,11 @@ export default function HistoryPage() {
     { key: 'all', label: 'all' },
     { key: 'feed', label: '🍼 formula' },
     { key: 'breast', label: '🤱 breast' },
+    { key: 'solid', label: '🥑 solids' },
     { key: 'poop', label: '💩 poops' },
     { key: 'pee', label: '💧 pee' },
     { key: 'sleep', label: '😴 sleep' },
+    { key: 'tummytime', label: '👶 tummy' },
   ];
 
   return (

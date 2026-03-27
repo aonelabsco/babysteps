@@ -92,6 +92,8 @@ export function useDaySummary(events: BabyEvent[]): DaySummary {
     sleepCount: todayEvents.filter((e) => e.type === 'sleep').length,
     totalNapMinutes,
     lastNapMinutes,
+    solidCount: todayEvents.filter((e) => e.type === 'solid').length,
+    tummyTimeMinutes: todayEvents.filter((e) => e.type === 'tummytime').reduce((sum, e) => sum + (e.tummyDuration || 0), 0),
   };
 }
 

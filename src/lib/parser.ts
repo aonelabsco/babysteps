@@ -1,4 +1,5 @@
-import type { ParsedInput, PoopSize, BreastSide } from './types';
+import type { ParsedInput, PoopSize, BreastSide, MealType, Allergen } from './types';
+import { COMMON_ALLERGENS } from './types';
 
 /**
  * Extract time from text, returning the timestamp and text with time removed.
@@ -112,6 +113,35 @@ export function parseInput(text: string, babyNames: string[] = []): ParsedInput 
   // "fed" / "feed" without quantity (formula)
   if (/\b(?:fed|feed|bottle|formula)\b/i.test(remaining)) {
     return { type: 'feed', babyName, timestamp };
+  }
+
+  // --- SOLID FOOD patterns ---
+  if (/\b(?:solids?|puree|cereal|fruit|veggie|vegetable|avocado|banana|rice|oat|sweet\s*potato)\b/i.test(remaining) ||
+      /\b(?:ate|eaten|eating)\s+(?!.*\d+\s*(?:ml|oz))/i.test(remaining)) {
+    const foodMatch = remaining.match(/(?:ate|had|eating|tried|gave)\s+(.+)/i);
+    const foodName = foodMatch ? foodMatch[1].replace(/\b(at|around|about)\b.*$/i, '').trim() : undefined;
+    let mealType: MealType | undefined;
+    if (/\bbreakfast\b/i.test(remaining)) mealType = 'breakfast';
+    else if (/\blunch\b/i.test(remaining)) mealType = 'lunch';
+    else if (/\bdinner\b/i.test(remaining)) mealType = 'dinner';
+    else if (/\bsnack\b/i.test(remaining)) mealType = 'snack';
+    const allergens = COMMON_ALLERGENS.filter((a) => remaining.toLowerCase().includes(a)) as Allergen[];
+    return { type: 'solid', foodName, mealType, allergens: allergens.length > 0 ? allergens : undefined, babyName, timestamp };
+  }
+
+  // --- TUMMY TIME patterns ---
+  if (/\b(?:tummy\s*time|tummy|prone|on\s*(?:his|her|their)\s*tummy)\b/i.test(remaining)) {
+    let tummyDuration: number | undefined;
+    const durMatch = remaining.match(/(\d+)\s*(?:min(?:ute)?s?|m)\b/i);
+    if (durMatch) tummyDuration = parseInt(durMatch[1]);
+    return { type: 'tummytime', tummyDuration, babyName, timestamp };
+  }
+
+  // --- MILESTONE patterns ---
+  if (/\b(?:milestone|first\s+(?:smile|tooth|step|word|crawl|roll|laugh|wave|clap))\b/i.test(remaining) ||
+      /\b(?:roll(?:ed|ing)\s*over|crawl(?:ed|ing)|walk(?:ed|ing)|stand(?:ing)?|sit(?:ting)?|clap(?:ped|ping))\b/i.test(remaining)) {
+    const milestoneName = remaining.replace(/\b(baby|at|around|about|just|started)\b/gi, '').trim();
+    return { type: 'milestone', milestoneName, babyName, timestamp };
   }
 
   // --- POOP patterns ---

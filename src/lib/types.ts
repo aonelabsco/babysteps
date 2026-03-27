@@ -46,9 +46,21 @@ export interface Family {
   members: FamilyMember[];
 }
 
-export type EventType = 'feed' | 'breast' | 'poop' | 'pee' | 'sleep' | 'wake';
+export type EventType = 'feed' | 'breast' | 'poop' | 'pee' | 'sleep' | 'wake' | 'solid' | 'tummytime' | 'milestone';
 export type PoopSize = 'big' | 'medium' | 'small';
 export type BreastSide = 'left' | 'right' | 'both';
+export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
+
+export const COMMON_ALLERGENS = [
+  'dairy', 'eggs', 'peanuts', 'tree nuts', 'wheat', 'soy', 'fish', 'shellfish', 'sesame',
+] as const;
+export type Allergen = typeof COMMON_ALLERGENS[number];
+
+export const COMMON_MILESTONES = [
+  'first smile', 'holds head up', 'rolls over', 'sits unassisted', 'first tooth',
+  'crawling', 'pulls to stand', 'first steps', 'first words', 'clapping',
+  'waving', 'pincer grasp', 'walks independently', 'runs', 'first sentence',
+] as const;
 
 export interface BabyEvent {
   id: string;
@@ -67,6 +79,14 @@ export interface BabyEvent {
   // breast
   breastSide?: BreastSide;
   breastDuration?: number; // minutes
+  // solid food
+  foodName?: string;
+  mealType?: MealType;
+  allergens?: Allergen[];
+  // tummy time
+  tummyDuration?: number; // minutes
+  // milestone
+  milestoneName?: string;
 }
 
 export interface DaySummary {
@@ -84,6 +104,8 @@ export interface DaySummary {
   sleepCount: number;
   totalNapMinutes: number;
   lastNapMinutes: number | null;
+  solidCount: number;
+  tummyTimeMinutes: number;
 }
 
 export interface ParsedInput {
@@ -93,6 +115,11 @@ export interface ParsedInput {
   size?: PoopSize;
   breastSide?: BreastSide;
   breastDuration?: number;
+  foodName?: string;
+  mealType?: MealType;
+  allergens?: Allergen[];
+  tummyDuration?: number;
+  milestoneName?: string;
   babyName?: string;
   timestamp?: number;
 }
