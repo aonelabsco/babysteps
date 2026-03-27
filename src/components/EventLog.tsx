@@ -40,14 +40,15 @@ function eventDescription(event: BabyEvent): string {
     }
     case 'solid': {
       const food = event.foodName || 'food';
-      const meal = event.mealType ? ` · ${event.mealType}` : '';
       const allergenStr = event.allergens?.length ? ` ⚠️ ${event.allergens.join(', ')}` : '';
-      return `${food}${meal}${allergenStr}`;
+      return `${food}${allergenStr}`;
     }
     case 'tummytime':
       return event.tummyDuration ? `tummy time · ${event.tummyDuration}m` : 'tummy time';
     case 'milestone':
       return event.milestoneName || 'milestone';
+    case 'note':
+      return event.noteText || 'note';
     case 'poop':
       return `poop (${event.size || 'medium'})`;
     case 'pee':
@@ -70,6 +71,7 @@ function eventIcon(type: string): string {
     case 'pee': return '💧';
     case 'sleep': return '😴';
     case 'wake': return '☀️';
+    case 'note': return '📝';
     default: return '📝';
   }
 }

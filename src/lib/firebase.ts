@@ -253,8 +253,13 @@ export async function updateFamilyUnits(familyId: string, units: Record<string, 
   await updateDoc(doc(db, 'families', familyId), units);
 }
 
+// Firestore rejects undefined values — strip them before writing
+function stripUndefined<T extends Record<string, unknown>>(obj: T): T {
+  return Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined)) as T;
+}
+
 export async function addEvent(event: Omit<BabyEvent, 'id'>): Promise<string> {
-  const ref = await addDoc(collection(db, 'events'), event);
+  const ref = await addDoc(collection(db, 'events'), stripUndefined(event));
   return ref.id;
 }
 

@@ -11,7 +11,7 @@ import EventLog from '@/components/EventLog';
 import Header from '@/components/Header';
 import { subscribeToDayEvents, addEvent, setDefaultUnit } from '@/lib/firebase';
 import { useDaySummary, useFeedAlert } from '@/lib/hooks';
-import type { BabyEvent, EventType, ParsedInput, PoopSize, BreastSide, MealType, Allergen } from '@/lib/types';
+import type { BabyEvent, EventType, ParsedInput, PoopSize, BreastSide, Allergen } from '@/lib/types';
 
 export default function DashboardPage() {
   const { user, loading, family, familyLoading } = useAuthContext();
@@ -20,6 +20,7 @@ export default function DashboardPage() {
   const [events, setEvents] = useState<BabyEvent[]>([]);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState('');
+  const [dismissedNotes, setDismissedNotes] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!loading && !user) {
@@ -64,7 +65,7 @@ export default function DashboardPage() {
   const logEvent = useCallback(async (
     type: EventType,
     timestamp: number,
-    extra?: { quantity?: number; unit?: 'ml' | 'oz'; size?: PoopSize; breastSide?: BreastSide; breastDuration?: number; foodName?: string; mealType?: MealType; allergens?: Allergen[]; tummyDuration?: number; milestoneName?: string }
+    extra?: { quantity?: number; unit?: 'ml' | 'oz'; size?: PoopSize; breastSide?: BreastSide; breastDuration?: number; foodName?: string; allergens?: Allergen[]; tummyDuration?: number; milestoneName?: string; noteText?: string }
   ) => {
     if (!family || !user || !selectedBabyId) return;
 
@@ -85,12 +86,13 @@ export default function DashboardPage() {
       timestamp,
       createdBy: user.uid,
       createdByName: user.displayName || 'Parent',
-      ...(type === 'feed' && { quantity: extra?.quantity, unit }),
-      ...(type === 'poop' && { size: extra?.size }),
-      ...(type === 'breast' && { breastSide: extra?.breastSide, breastDuration: extra?.breastDuration }),
-      ...(type === 'solid' && { foodName: extra?.foodName, mealType: extra?.mealType, allergens: extra?.allergens }),
-      ...(type === 'tummytime' && { tummyDuration: extra?.tummyDuration }),
-      ...(type === 'milestone' && { milestoneName: extra?.milestoneName }),
+      ...(type === 'feed' ? { quantity: extra?.quantity, unit } : {}),
+      ...(type === 'poop' ? { size: extra?.size } : {}),
+      ...(type === 'breast' ? { breastSide: extra?.breastSide, breastDuration: extra?.breastDuration } : {}),
+      ...(type === 'solid' ? { foodName: extra?.foodName, allergens: extra?.allergens } : {}),
+      ...(type === 'tummytime' ? { tummyDuration: extra?.tummyDuration } : {}),
+      ...(type === 'milestone' ? { milestoneName: extra?.milestoneName } : {}),
+      ...(type === 'note' ? { noteText: extra?.noteText } : {}),
     };
 
     // Optimistic update — add to local state immediately
@@ -106,6 +108,7 @@ export default function DashboardPage() {
       solid: 'solid food logged',
       tummytime: 'tummy time logged',
       milestone: 'milestone logged',
+      note: 'note saved',
     };
     showToast(labels[type]);
 
@@ -119,12 +122,13 @@ export default function DashboardPage() {
         timestamp,
         createdBy: user.uid,
         createdByName: user.displayName || 'Parent',
-        ...(type === 'feed' && { quantity: extra?.quantity, unit }),
-        ...(type === 'poop' && { size: extra?.size }),
-        ...(type === 'breast' && { breastSide: extra?.breastSide, breastDuration: extra?.breastDuration }),
-        ...(type === 'solid' && { foodName: extra?.foodName, mealType: extra?.mealType, allergens: extra?.allergens }),
-        ...(type === 'tummytime' && { tummyDuration: extra?.tummyDuration }),
-        ...(type === 'milestone' && { milestoneName: extra?.milestoneName }),
+        ...(type === 'feed' ? { quantity: extra?.quantity, unit } : {}),
+        ...(type === 'poop' ? { size: extra?.size } : {}),
+        ...(type === 'breast' ? { breastSide: extra?.breastSide, breastDuration: extra?.breastDuration } : {}),
+        ...(type === 'solid' ? { foodName: extra?.foodName, allergens: extra?.allergens } : {}),
+        ...(type === 'tummytime' ? { tummyDuration: extra?.tummyDuration } : {}),
+        ...(type === 'milestone' ? { milestoneName: extra?.milestoneName } : {}),
+        ...(type === 'note' ? { noteText: extra?.noteText } : {}),
       });
     } catch {
       showToast('failed to save. try again.');
@@ -159,7 +163,6 @@ export default function DashboardPage() {
       breastSide: parsed.breastSide,
       breastDuration: parsed.breastDuration,
       foodName: parsed.foodName,
-      mealType: parsed.mealType,
       allergens: parsed.allergens,
       tummyDuration: parsed.tummyDuration,
       milestoneName: parsed.milestoneName,
@@ -213,6 +216,36 @@ export default function DashboardPage() {
         ) : (
           <>
             <SummaryCard summary={summary} feedAlert={feedAlert} />
+
+            {/* Family notes notification */}
+            {(() => {
+              const notes = events.filter((e) => e.type === 'note' && e.noteText && !dismissedNotes.has(e.id));
+              if (notes.length === 0) return null;
+              return (
+                <div className="space-y-2">
+                  {notes.map((note) => (
+                    <div key={note.id} className="bg-amber-900/30 rounded-xl px-4 py-3 border border-amber-700/50 flex items-start gap-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-amber-200/70 font-medium">
+                          {note.createdByName} · {new Date(note.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                        <p className="text-base text-amber-100 mt-0.5">{note.noteText}</p>
+                      </div>
+                      <button
+                        onClick={() => setDismissedNotes((prev) => new Set([...prev, note.id]))}
+                        className="p-1 text-amber-400/60 hover:text-amber-300 transition-colors shrink-0"
+                        aria-label="Dismiss note"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="18" y1="6" x2="6" y2="18" />
+                          <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
 
             <QuickActions
               defaultUnit={family.defaultUnit}

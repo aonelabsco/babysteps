@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useAuthContext } from '@/components/AuthProvider';
 import BabySelector from '@/components/BabySelector';
 import Header from '@/components/Header';
-import { subscribeToEvents, addEvent } from '@/lib/firebase';
-import type { BabyEvent, MealType, Allergen } from '@/lib/types';
+import { subscribeToEvents, addEvent, updateEventTimestamp } from '@/lib/firebase';
+import type { BabyEvent, Allergen } from '@/lib/types';
 import { COMMON_ALLERGENS, COMMON_MILESTONES } from '@/lib/types';
 
 function formatTimer(seconds: number): string {
@@ -67,7 +67,7 @@ function TimePicker({ onSelect }: { onSelect: (timestamp: number) => void }) {
   );
 }
 
-type ActivePanel = 'solid' | 'tummy' | null;
+type ActivePanel = 'solid' | 'tummy' | 'note' | null;
 
 export default function ActivityPage() {
   const { user, loading, family, familyLoading } = useAuthContext();
@@ -79,7 +79,6 @@ export default function ActivityPage() {
 
   // Solid food state
   const [foodName, setFoodName] = useState('');
-  const [mealType, setMealType] = useState<MealType>('snack');
   const [selectedAllergens, setSelectedAllergens] = useState<Set<Allergen>>(new Set());
 
   // Tummy time state
@@ -91,6 +90,11 @@ export default function ActivityPage() {
   // Milestone state
   const [showMilestoneForm, setShowMilestoneForm] = useState(false);
   const [customMilestone, setCustomMilestone] = useState('');
+  const [editingMilestoneId, setEditingMilestoneId] = useState<string | null>(null);
+  const [editMilestoneDate, setEditMilestoneDate] = useState('');
+
+  // Note state
+  const [noteText, setNoteText] = useState('');
 
   useEffect(() => {
     if (!loading && !user) router.replace('/');
@@ -105,7 +109,9 @@ export default function ActivityPage() {
 
   useEffect(() => {
     if (!family?.id || !selectedBabyId) return;
-    const unsub = subscribeToEvents(family.id, selectedBabyId, setEvents);
+    const unsub = subscribeToEvents(family.id, selectedBabyId, setEvents, (err) => {
+      console.error('Activity events subscription error:', err.message);
+    });
     return unsub;
   }, [family?.id, selectedBabyId]);
 
@@ -126,14 +132,14 @@ export default function ActivityPage() {
   }, []);
 
   const logEvent = useCallback(async (
-    type: 'solid' | 'tummytime' | 'milestone',
+    type: 'solid' | 'tummytime' | 'milestone' | 'note',
     timestamp: number,
-    extra?: { foodName?: string; mealType?: MealType; allergens?: Allergen[]; tummyDuration?: number; milestoneName?: string }
+    extra?: { foodName?: string; allergens?: Allergen[]; tummyDuration?: number; milestoneName?: string; noteText?: string }
   ) => {
     if (!family || !user || !selectedBabyId) return;
     const babyName = family.babies.find((b) => b.id === selectedBabyId)?.name || '';
     try {
-      await addEvent({
+      const eventData: Record<string, unknown> = {
         familyId: family.id,
         babyId: selectedBabyId,
         babyName,
@@ -141,13 +147,25 @@ export default function ActivityPage() {
         timestamp,
         createdBy: user.uid,
         createdByName: user.displayName || 'Parent',
-        ...(type === 'solid' && { foodName: extra?.foodName, mealType: extra?.mealType, allergens: extra?.allergens }),
-        ...(type === 'tummytime' && { tummyDuration: extra?.tummyDuration }),
-        ...(type === 'milestone' && { milestoneName: extra?.milestoneName }),
-      });
-      const labels = { solid: 'solid food logged', tummytime: 'tummy time logged', milestone: 'milestone logged' };
+      };
+      if (type === 'solid') {
+        eventData.foodName = extra?.foodName;
+        if (extra?.allergens && extra.allergens.length > 0) eventData.allergens = extra.allergens;
+      }
+      if (type === 'tummytime' && extra?.tummyDuration) {
+        eventData.tummyDuration = extra.tummyDuration;
+      }
+      if (type === 'milestone') {
+        eventData.milestoneName = extra?.milestoneName;
+      }
+      if (type === 'note') {
+        eventData.noteText = extra?.noteText;
+      }
+      await addEvent(eventData as Parameters<typeof addEvent>[0]);
+      const labels = { solid: 'solid food logged', tummytime: 'tummy time logged', milestone: 'milestone logged', note: 'note saved' };
       showToast(labels[type]);
-    } catch {
+    } catch (err) {
+      console.error('Failed to save event:', err);
       showToast('failed to save. try again.');
     }
   }, [family, user, selectedBabyId, showToast]);
@@ -167,6 +185,7 @@ export default function ActivityPage() {
       setActivePanel(panel);
       setFoodName('');
       setSelectedAllergens(new Set());
+      setNoteText('');
       if (panel !== 'tummy') {
         setTummyTimerRunning(false);
         setTummySeconds(0);
@@ -177,7 +196,12 @@ export default function ActivityPage() {
 
   // Milestone data
   const milestoneEvents = events.filter((e) => e.type === 'milestone');
-  const achieved = new Set(milestoneEvents.map((e) => e.milestoneName));
+  const achievedMap = new Map<string, BabyEvent>();
+  milestoneEvents.forEach((e) => {
+    if (e.milestoneName && !achievedMap.has(e.milestoneName)) {
+      achievedMap.set(e.milestoneName, e);
+    }
+  });
 
   // Allergen data
   const solidEvents = events.filter((e) => e.type === 'solid' && e.allergens?.length);
@@ -187,6 +211,18 @@ export default function ActivityPage() {
       if (!introducedAllergens.has(a)) introducedAllergens.set(a, e.timestamp);
     });
   });
+
+  const saveMilestoneDate = async (eventId: string) => {
+    if (!editMilestoneDate) { setEditingMilestoneId(null); return; }
+    try {
+      const newTs = new Date(editMilestoneDate + 'T12:00:00').getTime();
+      await updateEventTimestamp(eventId, newTs);
+      showToast('milestone date updated');
+    } catch {
+      showToast('failed to update');
+    }
+    setEditingMilestoneId(null);
+  };
 
   return (
     <div className="min-h-screen bg-dark-950 pb-24">
@@ -234,6 +270,16 @@ export default function ActivityPage() {
           >
             👶 tummy time
           </button>
+          <button
+            onClick={() => togglePanel('note')}
+            className={`flex-1 py-4 rounded-xl text-lg font-semibold transition-all ${
+              activePanel === 'note'
+                ? 'bg-accent-500 text-white'
+                : 'bg-dark-800 text-gray-300 border border-dark-600 hover:bg-dark-700'
+            }`}
+          >
+            📝 note
+          </button>
         </div>
 
         {/* Solid food panel */}
@@ -246,21 +292,6 @@ export default function ActivityPage() {
               placeholder="what did baby eat?"
               className="w-full py-2.5 px-3 rounded-lg text-base bg-dark-800 text-gray-200 placeholder-gray-600 border border-dark-600 focus:outline-none focus:ring-1 focus:ring-accent-500"
             />
-            <div className="flex gap-2">
-              {(['breakfast', 'lunch', 'dinner', 'snack'] as MealType[]).map((m) => (
-                <button
-                  key={m}
-                  onClick={() => setMealType(m)}
-                  className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    mealType === m
-                      ? 'bg-accent-500 text-white'
-                      : 'bg-dark-800 text-gray-400 hover:bg-dark-700'
-                  }`}
-                >
-                  {m}
-                </button>
-              ))}
-            </div>
             <div>
               <p className="text-sm text-gray-500 mb-1.5">allergens (tap to tag)</p>
               <div className="flex flex-wrap gap-1.5">
@@ -287,7 +318,6 @@ export default function ActivityPage() {
               <TimePicker onSelect={(ts) => {
                 logEvent('solid', ts, {
                   foodName: foodName.trim(),
-                  mealType,
                   allergens: selectedAllergens.size > 0 ? [...selectedAllergens] : undefined,
                 });
                 setFoodName('');
@@ -353,24 +383,50 @@ export default function ActivityPage() {
           </div>
         )}
 
+        {/* Note panel */}
+        {activePanel === 'note' && (
+          <div className="bg-dark-900 rounded-xl p-3 border border-dark-700 space-y-3">
+            <textarea
+              value={noteText}
+              onChange={(e) => setNoteText(e.target.value)}
+              placeholder="leave a note for the family..."
+              rows={3}
+              className="w-full py-2.5 px-3 rounded-lg text-base bg-dark-800 text-gray-200 placeholder-gray-600 border border-dark-600 focus:outline-none focus:ring-1 focus:ring-accent-500 resize-none"
+            />
+            <button
+              onClick={() => {
+                if (noteText.trim()) {
+                  logEvent('note', Date.now(), { noteText: noteText.trim() });
+                  setNoteText('');
+                  setActivePanel(null);
+                }
+              }}
+              disabled={!noteText.trim()}
+              className="w-full py-2.5 rounded-lg text-base font-medium bg-accent-500 text-white hover:bg-accent-600 transition-colors disabled:opacity-50"
+            >
+              save note
+            </button>
+          </div>
+        )}
+
         {/* Milestones */}
         <div className="bg-dark-900 rounded-2xl p-4 border border-dark-700 space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-semibold text-gray-500">milestones</h2>
-            <span className="text-sm text-gray-600">{achieved.size} recorded</span>
+            <span className="text-sm text-gray-600">{achievedMap.size} recorded</span>
           </div>
           <div className="flex flex-wrap gap-1.5">
             {COMMON_MILESTONES.map((m) => (
               <button
                 key={m}
-                onClick={() => !achieved.has(m) && logEvent('milestone', Date.now(), { milestoneName: m })}
+                onClick={() => !achievedMap.has(m) && logEvent('milestone', Date.now(), { milestoneName: m })}
                 className={`px-2.5 py-1 rounded-full text-sm font-medium transition-colors ${
-                  achieved.has(m)
+                  achievedMap.has(m)
                     ? 'bg-green-600/30 text-green-400 border border-green-600/50'
                     : 'bg-dark-800 text-gray-500 hover:bg-dark-700 hover:text-gray-300'
                 }`}
               >
-                {achieved.has(m) ? '✓ ' : ''}{m}
+                {achievedMap.has(m) ? '✓ ' : ''}{m}
               </button>
             ))}
           </div>
@@ -413,9 +469,45 @@ export default function ActivityPage() {
           {milestoneEvents.length > 0 && (
             <div className="space-y-1 pt-1">
               {milestoneEvents.map((e) => (
-                <div key={e.id} className="flex items-center justify-between text-sm">
-                  <span className="text-gray-300">🌟 {e.milestoneName}</span>
-                  <span className="text-gray-600">{new Date(e.timestamp).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
+                <div key={e.id}>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-300">🌟 {e.milestoneName}</span>
+                    <button
+                      onClick={() => {
+                        if (editingMilestoneId === e.id) {
+                          setEditingMilestoneId(null);
+                        } else {
+                          setEditingMilestoneId(e.id);
+                          setEditMilestoneDate(new Date(e.timestamp).toISOString().split('T')[0]);
+                        }
+                      }}
+                      className="text-gray-500 hover:text-accent-400 transition-colors"
+                    >
+                      {new Date(e.timestamp).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                    </button>
+                  </div>
+                  {editingMilestoneId === e.id && (
+                    <div className="flex items-center gap-2 mt-1 ml-6">
+                      <input
+                        type="date"
+                        value={editMilestoneDate}
+                        onChange={(ev) => setEditMilestoneDate(ev.target.value)}
+                        className="px-2 py-1 rounded-lg text-sm bg-dark-800 text-gray-200 border border-dark-600 focus:outline-none focus:ring-1 focus:ring-accent-500"
+                      />
+                      <button
+                        onClick={() => saveMilestoneDate(e.id)}
+                        className="px-2 py-1 rounded-lg text-sm bg-accent-500 text-white font-medium"
+                      >
+                        save
+                      </button>
+                      <button
+                        onClick={() => setEditingMilestoneId(null)}
+                        className="px-2 py-1 rounded-lg text-sm bg-dark-800 text-gray-400"
+                      >
+                        cancel
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

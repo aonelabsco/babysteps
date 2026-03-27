@@ -46,7 +46,7 @@ export interface Family {
   members: FamilyMember[];
 }
 
-export type EventType = 'feed' | 'breast' | 'poop' | 'pee' | 'sleep' | 'wake' | 'solid' | 'tummytime' | 'milestone';
+export type EventType = 'feed' | 'breast' | 'poop' | 'pee' | 'sleep' | 'wake' | 'solid' | 'tummytime' | 'milestone' | 'note';
 export type PoopSize = 'big' | 'medium' | 'small';
 export type BreastSide = 'left' | 'right' | 'both';
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
@@ -87,6 +87,8 @@ export interface BabyEvent {
   tummyDuration?: number; // minutes
   // milestone
   milestoneName?: string;
+  // note
+  noteText?: string;
 }
 
 export interface DaySummary {
