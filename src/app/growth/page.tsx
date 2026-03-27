@@ -5,9 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useAuthContext } from '@/components/AuthProvider';
 import BabySelector from '@/components/BabySelector';
 import Header from '@/components/Header';
-import { subscribeToGrowthRecords, addGrowthRecord, deleteGrowthRecord, subscribeToEvents, addEvent } from '@/lib/firebase';
-import type { GrowthRecord, BabyEvent, Allergen } from '@/lib/types';
-import { COMMON_MILESTONES, COMMON_ALLERGENS } from '@/lib/types';
+import { subscribeToGrowthRecords, addGrowthRecord, deleteGrowthRecord } from '@/lib/firebase';
+import type { GrowthRecord } from '@/lib/types';
 
 function formatDate(ts: number): string {
   return new Date(ts).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
@@ -40,11 +39,8 @@ export default function GrowthPage() {
   const router = useRouter();
   const [selectedBabyId, setSelectedBabyId] = useState<string | null>(null);
   const [records, setRecords] = useState<GrowthRecord[]>([]);
-  const [events, setEvents] = useState<BabyEvent[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [showMilestoneForm, setShowMilestoneForm] = useState(false);
-  const [customMilestone, setCustomMilestone] = useState('');
 
   // Form state
   const [formDate, setFormDate] = useState(() => new Date().toISOString().split('T')[0]);
@@ -68,12 +64,6 @@ export default function GrowthPage() {
     const unsub = subscribeToGrowthRecords(family.id, selectedBabyId, setRecords, (err) => {
       console.error('Growth subscription error:', err.message);
     });
-    return unsub;
-  }, [family?.id, selectedBabyId]);
-
-  useEffect(() => {
-    if (!family?.id || !selectedBabyId) return;
-    const unsub = subscribeToEvents(family.id, selectedBabyId, setEvents);
     return unsub;
   }, [family?.id, selectedBabyId]);
 
@@ -133,11 +123,23 @@ export default function GrowthPage() {
       <div className="max-w-lg mx-auto px-4 pt-6 space-y-4">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold text-gray-100">growth</h1>
-          <BabySelector
-            babies={family.babies || []}
-            selectedId={selectedBabyId}
-            onSelect={setSelectedBabyId}
-          />
+          <div className="flex items-center gap-2">
+            <BabySelector
+              babies={family.babies || []}
+              selectedId={selectedBabyId}
+              onSelect={setSelectedBabyId}
+            />
+            <button
+              onClick={() => router.push('/settings')}
+              className="p-2 text-gray-500 hover:text-gray-300 transition-colors"
+              aria-label="Settings"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="3" />
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         {/* Baby info card */}
@@ -269,140 +271,6 @@ export default function GrowthPage() {
             </div>
           </form>
         )}
-
-        {/* Milestones */}
-        {(() => {
-          const milestoneEvents = events.filter((e) => e.type === 'milestone');
-          const achieved = new Set(milestoneEvents.map((e) => e.milestoneName));
-
-          const logMilestone = async (name: string) => {
-            if (!family || !user || !selectedBabyId) return;
-            const babyName = family.babies.find((b) => b.id === selectedBabyId)?.name || '';
-            await addEvent({
-              familyId: family.id,
-              babyId: selectedBabyId,
-              babyName,
-              type: 'milestone',
-              timestamp: Date.now(),
-              createdBy: user.uid,
-              createdByName: user.displayName || 'Parent',
-              milestoneName: name,
-            });
-          };
-
-          return (
-            <div className="bg-dark-900 rounded-2xl p-4 border border-dark-700 space-y-3">
-              <div className="flex items-center justify-between">
-                <h2 className="text-base font-semibold text-gray-500">milestones</h2>
-                <span className="text-sm text-gray-600">{achieved.size} recorded</span>
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {COMMON_MILESTONES.map((m) => (
-                  <button
-                    key={m}
-                    onClick={() => !achieved.has(m) && logMilestone(m)}
-                    className={`px-2.5 py-1 rounded-full text-sm font-medium transition-colors ${
-                      achieved.has(m)
-                        ? 'bg-green-600/30 text-green-400 border border-green-600/50'
-                        : 'bg-dark-800 text-gray-500 hover:bg-dark-700 hover:text-gray-300'
-                    }`}
-                  >
-                    {achieved.has(m) ? '✓ ' : ''}{m}
-                  </button>
-                ))}
-              </div>
-              {!showMilestoneForm ? (
-                <button
-                  onClick={() => setShowMilestoneForm(true)}
-                  className="text-sm text-accent-400 hover:text-accent-300"
-                >
-                  + add custom milestone
-                </button>
-              ) : (
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={customMilestone}
-                    onChange={(e) => setCustomMilestone(e.target.value)}
-                    placeholder="e.g. first laugh"
-                    className="flex-1 px-3 py-2 rounded-lg text-sm bg-dark-800 text-gray-200 border border-dark-600 focus:outline-none focus:ring-1 focus:ring-accent-500"
-                  />
-                  <button
-                    onClick={() => {
-                      if (customMilestone.trim()) {
-                        logMilestone(customMilestone.trim());
-                        setCustomMilestone('');
-                        setShowMilestoneForm(false);
-                      }
-                    }}
-                    className="px-3 py-2 rounded-lg text-sm bg-accent-500 text-white font-medium"
-                  >
-                    add
-                  </button>
-                  <button
-                    onClick={() => { setShowMilestoneForm(false); setCustomMilestone(''); }}
-                    className="px-3 py-2 rounded-lg text-sm bg-dark-800 text-gray-400"
-                  >
-                    cancel
-                  </button>
-                </div>
-              )}
-              {/* Show achieved milestones with dates */}
-              {milestoneEvents.length > 0 && (
-                <div className="space-y-1 pt-1">
-                  {milestoneEvents.map((e) => (
-                    <div key={e.id} className="flex items-center justify-between text-sm">
-                      <span className="text-gray-300">🌟 {e.milestoneName}</span>
-                      <span className="text-gray-600">{new Date(e.timestamp).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          );
-        })()}
-
-        {/* Allergens introduced */}
-        {(() => {
-          const solidEvents = events.filter((e) => e.type === 'solid' && e.allergens?.length);
-          const introducedAllergens = new Map<Allergen, number>();
-          // Walk from oldest to newest to get first introduction date
-          [...solidEvents].reverse().forEach((e) => {
-            e.allergens?.forEach((a) => {
-              if (!introducedAllergens.has(a)) introducedAllergens.set(a, e.timestamp);
-            });
-          });
-
-          return (
-            <div className="bg-dark-900 rounded-2xl p-4 border border-dark-700 space-y-3">
-              <div className="flex items-center justify-between">
-                <h2 className="text-base font-semibold text-gray-500">allergens introduced</h2>
-                <span className="text-sm text-gray-600">{introducedAllergens.size}/{COMMON_ALLERGENS.length}</span>
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {COMMON_ALLERGENS.map((a) => {
-                  const date = introducedAllergens.get(a);
-                  return (
-                    <div
-                      key={a}
-                      className={`px-2.5 py-1 rounded-full text-sm font-medium ${
-                        date
-                          ? 'bg-green-600/30 text-green-400 border border-green-600/50'
-                          : 'bg-dark-800 text-gray-600'
-                      }`}
-                      title={date ? `introduced ${new Date(date).toLocaleDateString()}` : 'not yet introduced'}
-                    >
-                      {date ? '✓ ' : ''}{a}
-                    </div>
-                  );
-                })}
-              </div>
-              <p className="text-xs text-gray-600">
-                tag allergens when logging solid foods to track introduction
-              </p>
-            </div>
-          );
-        })()}
 
         {/* History */}
         {records.length > 0 && (
