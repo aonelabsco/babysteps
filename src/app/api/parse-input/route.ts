@@ -35,15 +35,20 @@ ${babyNamesStr}
 Parse this input: "${text}"
 
 Respond with ONLY a JSON object (no markdown, no explanation) with these fields:
-- type: "feed" | "breast" | "poop" | "pee" | "sleep" | "wake"
+- type: "feed" | "breast" | "poop" | "pee" | "sleep" | "wake" | "solid" | "tummytime" | "milestone"
 - quantity: number (only for feed, in ml or oz)
 - unit: "ml" | "oz" (only for feed)
 - size: "big" | "medium" | "small" (only for poop)
 - breastSide: "left" | "right" | "both" (only for breast)
 - breastDuration: number in minutes (only for breast, if mentioned)
+- foodName: string (only for solid, what the baby ate)
+- mealType: "breakfast" | "lunch" | "dinner" | "snack" (only for solid)
+- allergens: string[] from ["dairy","eggs","peanuts","tree nuts","wheat","soy","fish","shellfish","sesame"] (only for solid, if applicable)
+- tummyDuration: number in minutes (only for tummytime)
+- milestoneName: string (only for milestone, e.g. "first smile", "rolling over")
 - babyName: string (only if a specific baby is mentioned)
 
-Use type "breast" for breastfeeding/nursing. Use type "feed" for formula/bottle feeds.
+Use type "breast" for breastfeeding/nursing. Use type "feed" for formula/bottle feeds. Use type "solid" for solid foods/purees. Use type "tummytime" for tummy time/prone play. Use type "milestone" for developmental milestones.
 
 If you cannot parse the input, respond with: {"error": "cannot parse"}`,
         },

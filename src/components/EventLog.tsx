@@ -38,6 +38,16 @@ function eventDescription(event: BabyEvent): string {
       const dur = event.breastDuration ? ` · ${event.breastDuration}m` : '';
       return `breastfed (${side}${dur})`;
     }
+    case 'solid': {
+      const food = event.foodName || 'food';
+      const meal = event.mealType ? ` · ${event.mealType}` : '';
+      const allergenStr = event.allergens?.length ? ` ⚠️ ${event.allergens.join(', ')}` : '';
+      return `${food}${meal}${allergenStr}`;
+    }
+    case 'tummytime':
+      return event.tummyDuration ? `tummy time · ${event.tummyDuration}m` : 'tummy time';
+    case 'milestone':
+      return event.milestoneName || 'milestone';
     case 'poop':
       return `poop (${event.size || 'medium'})`;
     case 'pee':
@@ -53,6 +63,9 @@ function eventIcon(type: string): string {
   switch (type) {
     case 'feed': return '🍼';
     case 'breast': return '🤱';
+    case 'solid': return '🥑';
+    case 'tummytime': return '👶';
+    case 'milestone': return '🌟';
     case 'poop': return '💩';
     case 'pee': return '💧';
     case 'sleep': return '😴';

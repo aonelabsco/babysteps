@@ -11,7 +11,7 @@ import EventLog from '@/components/EventLog';
 import Header from '@/components/Header';
 import { subscribeToDayEvents, addEvent, setDefaultUnit } from '@/lib/firebase';
 import { useDaySummary, useFeedAlert } from '@/lib/hooks';
-import type { BabyEvent, EventType, ParsedInput, PoopSize, BreastSide } from '@/lib/types';
+import type { BabyEvent, EventType, ParsedInput, PoopSize, BreastSide, MealType, Allergen } from '@/lib/types';
 
 export default function DashboardPage() {
   const { user, loading, family, familyLoading } = useAuthContext();
@@ -64,7 +64,7 @@ export default function DashboardPage() {
   const logEvent = useCallback(async (
     type: EventType,
     timestamp: number,
-    extra?: { quantity?: number; unit?: 'ml' | 'oz'; size?: PoopSize; breastSide?: BreastSide; breastDuration?: number }
+    extra?: { quantity?: number; unit?: 'ml' | 'oz'; size?: PoopSize; breastSide?: BreastSide; breastDuration?: number; foodName?: string; mealType?: MealType; allergens?: Allergen[]; tummyDuration?: number; milestoneName?: string }
   ) => {
     if (!family || !user || !selectedBabyId) return;
 
@@ -88,6 +88,9 @@ export default function DashboardPage() {
       ...(type === 'feed' && { quantity: extra?.quantity, unit }),
       ...(type === 'poop' && { size: extra?.size }),
       ...(type === 'breast' && { breastSide: extra?.breastSide, breastDuration: extra?.breastDuration }),
+      ...(type === 'solid' && { foodName: extra?.foodName, mealType: extra?.mealType, allergens: extra?.allergens }),
+      ...(type === 'tummytime' && { tummyDuration: extra?.tummyDuration }),
+      ...(type === 'milestone' && { milestoneName: extra?.milestoneName }),
     };
 
     // Optimistic update — add to local state immediately
@@ -100,6 +103,9 @@ export default function DashboardPage() {
       pee: 'pee logged',
       sleep: 'sleep logged',
       wake: 'wake logged',
+      solid: 'solid food logged',
+      tummytime: 'tummy time logged',
+      milestone: 'milestone logged',
     };
     showToast(labels[type]);
 
@@ -116,6 +122,9 @@ export default function DashboardPage() {
         ...(type === 'feed' && { quantity: extra?.quantity, unit }),
         ...(type === 'poop' && { size: extra?.size }),
         ...(type === 'breast' && { breastSide: extra?.breastSide, breastDuration: extra?.breastDuration }),
+        ...(type === 'solid' && { foodName: extra?.foodName, mealType: extra?.mealType, allergens: extra?.allergens }),
+        ...(type === 'tummytime' && { tummyDuration: extra?.tummyDuration }),
+        ...(type === 'milestone' && { milestoneName: extra?.milestoneName }),
       });
     } catch {
       showToast('failed to save. try again.');
@@ -149,6 +158,11 @@ export default function DashboardPage() {
       size: parsed.size,
       breastSide: parsed.breastSide,
       breastDuration: parsed.breastDuration,
+      foodName: parsed.foodName,
+      mealType: parsed.mealType,
+      allergens: parsed.allergens,
+      tummyDuration: parsed.tummyDuration,
+      milestoneName: parsed.milestoneName,
     });
   }, [family, user, selectedBabyId, logEvent, showToast]);
 
@@ -167,11 +181,23 @@ export default function DashboardPage() {
       <div className="max-w-lg mx-auto px-4 pt-6 space-y-4">
         <div className="flex items-center justify-between">
           <h1 className="text-lg font-bold text-gray-100">baby steps.</h1>
-          <BabySelector
-            babies={family.babies || []}
-            selectedId={selectedBabyId}
-            onSelect={setSelectedBabyId}
-          />
+          <div className="flex items-center gap-2">
+            <BabySelector
+              babies={family.babies || []}
+              selectedId={selectedBabyId}
+              onSelect={setSelectedBabyId}
+            />
+            <button
+              onClick={() => router.push('/settings')}
+              className="p-2 text-gray-500 hover:text-gray-300 transition-colors"
+              aria-label="Settings"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="3" />
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         {noBabies ? (

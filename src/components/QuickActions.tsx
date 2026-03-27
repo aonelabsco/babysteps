@@ -3,17 +3,19 @@
 import { useState, useEffect, useRef } from 'react';
 import type { EventType, PoopSize, BabyEvent, BreastSide, FeedingMode } from '@/lib/types';
 
+interface EventExtra {
+  quantity?: number;
+  unit?: 'ml' | 'oz';
+  size?: PoopSize;
+  breastSide?: BreastSide;
+  breastDuration?: number;
+}
+
 interface QuickActionsProps {
   defaultUnit: 'ml' | 'oz' | null;
   feedingMode: FeedingMode;
   lastSleepEvent: BabyEvent | null;
-  onLog: (type: EventType, timestamp: number, extra?: {
-    quantity?: number;
-    unit?: 'ml' | 'oz';
-    size?: PoopSize;
-    breastSide?: BreastSide;
-    breastDuration?: number;
-  }) => void;
+  onLog: (type: EventType, timestamp: number, extra?: EventExtra) => void;
   disabled?: boolean;
 }
 
@@ -102,57 +104,42 @@ export default function QuickActions({ defaultUnit, feedingMode, lastSleepEvent,
   const showFormula = feedingMode === 'formula' || feedingMode === 'both';
   const showBreast = feedingMode === 'breast' || feedingMode === 'both';
 
-  // Timer effect
+  // Timer effects
   useEffect(() => {
     if (breastTimerRunning) {
-      timerRef.current = setInterval(() => {
-        setBreastSeconds((s) => s + 1);
-      }, 1000);
+      timerRef.current = setInterval(() => setBreastSeconds((s) => s + 1), 1000);
     } else if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [breastTimerRunning]);
+
+  const resetTimers = () => {
+    setBreastTimerRunning(false);
+    setBreastSeconds(0);
+    breastStartTime.current = null;
+  };
 
   const toggle = (action: ExpandedAction) => {
     if (expanded === action) {
       setExpanded(null);
-      // Stop timer if closing breast panel
-      if (action === 'breast') {
-        setBreastTimerRunning(false);
-        setBreastSeconds(0);
-        breastStartTime.current = null;
-      }
+      resetTimers();
     } else {
       setExpanded(action);
       setSelectedSize('medium');
       setSelectedAmount(null);
       setCustomAmount('');
-      if (action !== 'breast') {
-        setBreastTimerRunning(false);
-        setBreastSeconds(0);
-        breastStartTime.current = null;
-      }
+      if (action !== 'breast') resetTimers();
     }
   };
 
-  const logWithTimestamp = (type: EventType, timestamp: number, extra?: {
-    quantity?: number;
-    unit?: 'ml' | 'oz';
-    size?: PoopSize;
-    breastSide?: BreastSide;
-    breastDuration?: number;
-  }) => {
+  const logWithTimestamp = (type: EventType, timestamp: number, extra?: EventExtra) => {
     onLog(type, timestamp, extra);
     setExpanded(null);
     setSelectedAmount(null);
     setCustomAmount('');
-    setBreastTimerRunning(false);
-    setBreastSeconds(0);
-    breastStartTime.current = null;
+    resetTimers();
   };
 
   const startBreastTimer = () => {
@@ -399,6 +386,7 @@ export default function QuickActions({ defaultUnit, feedingMode, lastSleepEvent,
           <TimePicker onSelect={(ts) => logWithTimestamp(sleepType, ts)} />
         </div>
       )}
+
     </div>
   );
 }

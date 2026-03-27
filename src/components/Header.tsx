@@ -10,7 +10,7 @@ export default function Header() {
     { href: '/dashboard', label: 'Home' },
     { href: '/history', label: 'History' },
     { href: '/growth', label: 'Growth' },
-    { href: '/settings', label: 'Settings' },
+    { href: '/activity', label: 'Activity' },
   ];
 
   return (
